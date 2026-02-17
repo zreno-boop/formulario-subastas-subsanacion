@@ -1,0 +1,101 @@
+:root {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  line-height: 1.0;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --color-one: #000000;
+  --color-two: #163738;
+  --color-three: #255B46;
+  --color-four: #00C29D;
+  --color-five: #afe951;
+  --color-six: #ffffee;
+  --color-seven: #ffffff;
+  /* De acento */
+  --color-eight: #FFBFBD;
+  --color-nine: #FE525E;
+  --color-ten: #F4AD39;
+  --color-eleven: #DDFF86;
+  --color-twelve: #594EEA;
+  /* Grises y offwhites */
+  --color-thirteen: #666666;
+  --color-forteen: #999999;
+  --color-fifteen: #cccccc;
+  --color-sixteen: #d4d2cb;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-width: 240px;  
+  min-height: 100vh;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #242424;
+}
+
+h1 {
+  font-weight: 700;
+  font-size: 2.4em;
+  line-height: 1.1;
+}
+
+.general-content {
+  text-align: center;
+  margin: 0 auto;
+  vertical-align: middle;
+}
+
+.form-check-input:focus {
+  border-color: none;
+  box-shadow: none;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+@media (max-width: 767px) {
+  h1 {
+    font-size: 1.8em;
+    line-height: 1.0;
+  }
+}

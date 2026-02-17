@@ -1,0 +1,268 @@
+.divLog {
+  width: 100%;
+  margin: 0;
+  padding: 0rem 1rem;
+  background-color: var(--color-five);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.divLog-img {
+  padding-left: 30px;
+  height: 65px;
+  width: auto;
+  cursor: pointer;
+}
+.img-logos {
+  height: 150px;
+  width: auto;
+  display: block;
+  margin: 0 auto;
+}
+.cardPpal {
+  text-align: justify;
+  margin: 0% 20% 0.5% 20%;
+  border-radius: 25px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.cardBodyPpal {
+  padding: 4% 8% 3% 8%;
+  border-radius: 25px;
+}
+.borderGreen {
+  border-color: var(--color-five) !important;
+  border-width: 2px;
+  border-style: solid;
+  --bs-border-opacity: 0.5;
+}
+button.buttons,
+.buttons,
+button.buttons:active,
+button.buttons:focus,
+button.buttons:hover {
+  background-color: var(--color-three);
+  color: var(--color-seven);
+  border: none;
+  border-radius: 8px;
+  padding: 0.4em 1.9em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.5s ease-in-out;
+}
+button.buttons:hover {
+  background-color: var(--color-five) !important;
+  color: var(--color-three) !important;
+  transform: translateX(6px);
+}
+button.buttons:active,
+button.buttons:focus,
+button.buttons:focus-visible {
+  background-color: var(--color-five) !important;
+  color: var(--color-three) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.btnAgregar {
+  border-radius: 8px;
+  border: 2px solid var(--color-five);
+  padding: 0.4em 1.2em;
+  font-size: 0.9em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  color: var(--color-two);
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+.btnAgregar:hover {
+  background-color: var(--color-five);
+  color: var(--color-two);
+}
+.buttonsBack {
+  border-radius: 8px;
+  border: none;
+  padding: 0.4em 1.9em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--color-thirteen);
+  color: var(--color-seven);
+  cursor: pointer;
+  transition: all 0.5s ease-in-out;
+}
+.buttonEmpty {
+  border-radius: 8px;
+  border: 1px solid var(--color-three);
+  padding: 0.4em 1.9em;
+  margin: 0;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  color: var(--color-three);
+  cursor: pointer;
+  transition: all 0.5s ease-in-out;
+}
+.buttonsBack:hover {
+  background-color: var(--color-forteen);
+  color: var(--color-seven);
+  transform: translateX(-6px);
+}
+.invalid-feedback { 
+  display: block; 
+}
+.react-datepicker-wrapper,
+.react-datepicker__input-container,
+.react-datepicker__input-container input {
+  width: 100% !important;
+}
+.custom-check input[type="checkbox"],
+.custom-check input[type="radio"] {
+  appearance: none;
+  margin-top: 0.3rem;
+  -webkit-appearance: none;
+  background-image: none !important;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-three);
+  cursor: pointer;
+  position: relative;
+  margin-right: 10px;
+  transition: all 0.2s ease-in-out;
+}
+.custom-check input[type="checkbox"] {
+  border-radius: 4px;
+}
+.custom-check input[type="radio"] {
+  border-radius: 50%;
+}
+.custom-check input[type="checkbox"]:checked,
+.custom-check input[type="radio"]:checked {
+  background-color: var(--color-five);
+  border-color: var(--color-three);
+}
+.custom-check input[type="checkbox"]:checked::after,
+.custom-check input[type="radio"]:checked::after {
+  content: "✔";  
+  color: var(--color-three) !important;
+  font-size: 18px;
+  position: absolute;
+  left: 2px;
+  top: -4.5px;
+}
+.btn-confirm {
+  background-color: #AFE951 !important;
+  color: #fff !important;
+  padding: 8px 18px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  font-weight: 600 !important;
+}
+.btn-cancel {
+  background-color: #666666 !important;
+  color: #fff !important;
+  padding: 8px 18px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  font-weight: 600 !important;
+}
+.btn-confirm:hover {
+  background-color: #255B46 !important;
+}
+.btn-cancel:hover {
+  background-color: #999999 !important;
+}
+@media (max-width: 1300px) {
+  .cardPpal {
+    margin: 0% 10% 0.5% 10%;
+  }
+}
+@media (max-width: 767px) {
+  .form-control, .form-select, .input-group .form-control { 
+    font-size: 0.95rem;
+  }
+  .cardPpal {
+    margin: 0% 1% 0.5% 1%;
+  }
+  .cardBodyPpal {
+    padding: 4% 2% 3% 2%;
+  }
+  .borderGreen {
+    padding: 0;
+    margin: 0;
+  }
+  h2 {
+    font-size: 1.5em;
+  }
+  h6 {
+    font-size: 1em;
+  }
+  div strong {
+    font-size: 0.9em;
+  }
+  .titulos {
+    font-size: 0.8em;
+  }
+  h4 {
+    font-size: 1.2em;
+  }
+  label {
+    font-size: 0.9em;
+  }
+  button.buttons,
+  .buttons,
+  button.buttons:active,
+  button.buttons:focus,
+  button.buttons:hover {
+    font-size: 0.9em;
+  }
+  .btnAgregar {
+    font-size: 0.8em;
+  }
+  h5 {
+    font-size: 1em;
+  }
+  p {
+    font-size: 0.9em;
+  }
+  .buttonsBack {
+    font-size: 0.9em;
+  }
+  li {
+    font-size: 0.9em;
+  }
+  .swal2-popup {
+    width: 90% !important;
+    padding: 1.5rem !important;
+  }
+  .swal2-title {
+    font-size: 1.2rem !important;
+  }
+  .swal2-html-container {
+    font-size: 1rem !important;
+  }
+  .swal2-actions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .swal2-actions button {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .btn-confirm,
+  .btn-cancel {
+    width: 100% !important;
+    padding: 12px !important;
+    font-size: 1rem !important;
+  }
+}
+@media (max-width: 480px) {
+  .divLog-img {
+    height: 45px;
+  }
+}
+
