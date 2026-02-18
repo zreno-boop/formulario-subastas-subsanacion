@@ -9,7 +9,7 @@ import Logos from '../../assets/logosEmpresas.png';
 
 export default function SubsanacionForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [enabledFields, setEnabledFields] = useState({});
+    const [selectedDocField, setSelectedDocField] = useState("");
 
     const {
         register,
@@ -22,61 +22,55 @@ export default function SubsanacionForm() {
 
     const tipoInscripcion = watch('tipoInscripcion');
 
-    const handleCheckboxChange = (fieldName) => {
-        setEnabledFields(prev => {
-            const newState = { ...prev, [fieldName]: !prev[fieldName] };
-            // If the field is being disabled, clear its value.
-            if (!newState[fieldName]) {
-                setValue(fieldName, null);
-            }
-            return newState;
-        });
-    };
-
     useEffect(() => {
-        // When inscription type changes, reset selections and file inputs
-        Object.keys(enabledFields).forEach(field => {
-            if (enabledFields[field]) {
-                setValue(field, null);
-            }
-        });
-        setEnabledFields({});
-        // We are not including setValue and enabledFields in dependencies to avoid re-running the effect on every render.
-        // We only want this to run when tipoInscripcion changes.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tipoInscripcion]);
+        // Reset selection when inscription type changes
+        setSelectedDocField("");
+        setValue("selectedDocFile", null);
+        setValue("soporteAclaraciones", null);
+    }, [tipoInscripcion, setValue]);
 
 
-    // Documentos comunes a ambos tipos
+    // Documentos comunes a ambos tipos (sin soporteAclaraciones para la lista de selección)
     const commonFields = [
-        { name: 'certificadoExistencia', label: 'Certificado de Existencia y Representación Legal', description: "Expedido con una antelación no mayor a treinta (30) días calendario a la fecha de cierre de la inscripción, ya sea del proponente inscrito de manera individual o de cada integrante de la estructura plural. Debe acreditarse que el representante legal del proponente inscrito de manera individual, o el representante legal principal del proponente inscrito como estructura plural, tenga facultades para poder presentarse a la subasta o allegar el documento del órgano competente de la persona jurídica correspondiente que ostente dichas facultades." },
+        { name: 'certificadoExistencia', label: 'Certificado de Existencia y Representación Legal', description: "Expedido con una antelación no mayor a treinta (30) días calendario  a la fecha de cierre de la inscripción, ya sea del proponente inscrito de manera individual o de cada integrante de la estructura plural. Debe acreditarse que el representante legal del proponente inscrito de manera individual, o el representante legal principal del proponente inscrito como estructura plural, tenga facultades para poder presentarse a la subasta o allegar el documento del órgano competente de la persona jurídica correspondiente que ostente dichas facultades." },
         { name: 'estadosFinancieros', label: 'Estados Financieros auditados', description: "Últimos estados financieros auditados disponibles (año 2024) ya sea del proponente inscrito de manera individual o de cada integrante de la estructura plural." },
         { name: 'autorizacionSubasta', label: 'Autorización para participar en la Subasta', description: "El representante legal del proponente inscrito de manera individual, o el representante legal principal del proponente inscrito como estructura plural, deberá contar con la autorización expresa del órgano competente, otorgada conforme a lo dispuesto en los estatutos sociales de la respectiva persona jurídica, cuando sus facultades de representación estén sujetas a límites de cuantía o a la aprobación previa de la junta directiva o del órgano decisorio correspondiente, para efectuar la compra de los certificados de derechos de construcción y desarrollo en la subasta." },
         { name: 'sarlaft', label: 'Documentación que respalde la verificación de SARLAFT', description: "El proponente, ya sea del inscrito de manera individual o cada integrante de la estructura plural, deberá aportar los formatos exigidos por la Sociedad Fiduciaria designada para tal efecto, con el fin de que dicha entidad adelante el proceso de verificación del SARLAFT del proponente." },
         { name: 'autorizacionTratamientoDatos', label: 'Autorización tratamiento de datos personales', description: "El representante legal del proponente inscrito de manera individual, o el representante legal principal del proponente inscrito como estructura plural, deberá incluir la autorización para el tratamiento de datos personales, de acuerdo con el formato que sea remitido por la Empresa de Renovación y Desarrollo Urbano de Bogotá D.C." },
         { name: 'situacionJuridicaDocumento', label: 'Documento que respalde el estado actual del predio señalado', description: "" },
-        { name: 'formFileSign', label: 'Firma del representante legal del proponente', description: "Firma del Representante Legal del proponente inscrito de manera individual o del Representante Legal principal del proponente inscrito como estructura plural" },
+        { name: 'formFileSign', label: 'Firma del representante legal del proponente', description: "Firma del Representante Legal del proponente  inscrito de manera individual o del Representante Legal principal del proponente inscrito como estructura plural" },
     ];
 
     // Documentos exclusivos de estructura plural
     const pluralFields = [
         { name: 'componentePlural', label: 'Conformación del proponente bajo la estructura plural', description: "En caso de que el proponente se inscriba como estructura plural, deberá aportar el documento que acredite su conformación, incluyendo el objeto, el plazo de vigencia, los porcentajes de participación de cada integrante y la designación y facultades del representante principal del proponente plural." },
-        { name: 'autorizacionOrganoDocumento', label: 'Autorización del órgano competente de cada integrante', description: "Adjunto declaración de que cuento con la autorización expresa del órgano competente, otorgada conforme a los estatutos sociales, para participar en calidad de estructura plural." },
+        { name: 'autorizacionOrganoDocumento', label: 'Autorización del órgano competente de cada integrante', description: "Declaración de autorización expresa del órgano competente para participar en estructura plural." },
     ];
 
-    const activeFields = tipoInscripcion === 'grupal'
+    const supportField = {
+        name: 'soporteAclaraciones',
+        label: 'Soporte de aclaraciones o correcciones',
+        description: "Adjunte un único archivo en formato PDF que contenga las aclaraciones, correcciones o ajustes relacionados frente a la información de los proyectos registrados en el anterior formulario de inscripción.",
+        accept: ".pdf"
+    };
+
+    const selectableFields = tipoInscripcion === 'grupal'
         ? [...commonFields, ...pluralFields]
         : commonFields;
+
+    const currentSelectedField = selectableFields.find(f => f.name === selectedDocField);
 
     const onSubmit = async (data) => {
         if (isSubmitting) return;
 
-        // Collect selected files
-        const hasFiles = activeFields.some(f => data[f.name]?.[0]);
-        if (!hasFiles) {
+        // Check if at least one file is provided
+        const hasSelectedFile = data.selectedDocFile?.[0];
+        const hasSupportFile = data.soporteAclaraciones?.[0];
+
+        if (!hasSelectedFile && !hasSupportFile) {
             Swal.fire({
                 title: 'Sin archivos',
-                text: 'Debes adjuntar al menos un documento para subsanar.',
+                text: 'Debes adjuntar al menos un documento (el documento a subsanar o el soporte de aclaraciones).',
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
                 confirmButtonColor: '#AFE951',
@@ -86,32 +80,31 @@ export default function SubsanacionForm() {
 
         const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 
-        for (const field of activeFields) {
-            if (data[field.name]?.[0]) {
-                const file = data[field.name][0];
-                if (file.size > MAX_FILE_SIZE) {
-                    Swal.fire({
-                        title: 'Archivo demasiado grande',
-                        text: `El archivo "${file.name}" excede el tamaño máximo permitido de 4 MB.`,
-                        icon: 'error',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#FE525E',
-                    });
-                    setIsSubmitting(false);
-                    return;
-                }
+        // Validate Selected Doc File
+        if (hasSelectedFile) {
+            const file = data.selectedDocFile[0];
+            if (file.size > MAX_FILE_SIZE) {
+                Swal.fire({ title: 'Archivo demasiado grande', text: `El archivo "${file.name}" excede los 4 MB.`, icon: 'error', confirmButtonColor: '#FE525E' });
+                return;
             }
         }
 
+        // Validate Support File
+        if (hasSupportFile) {
+            const file = data.soporteAclaraciones[0];
+            if (file.size > MAX_FILE_SIZE) {
+                Swal.fire({ title: 'Archivo demasiado grande', text: `El archivo "${file.name}" excede los 4 MB.`, icon: 'error', confirmButtonColor: '#FE525E' });
+                return;
+            }
+            if (file.type !== 'application/pdf') {
+                Swal.fire({ title: 'Formato no permitido', text: `El soporte de aclaraciones debe ser PDF.`, icon: 'error', confirmButtonColor: '#FE525E' });
+                return;
+            }
+        }
 
         setIsSubmitting(true);
         Swal.fire({
-            title: 'Enviando subsanación...',
-            html: `
-        <div style="display:flex; flex-direction:column; align-items:center;">
-          <p class="mt-3">Por favor espera mientras procesamos los documentos...</p>
-        </div>
-      `,
+            title: 'Enviando...',
             allowOutsideClick: false,
             showConfirmButton: false,
             didOpen: () => Swal.showLoading(),
@@ -122,56 +115,40 @@ export default function SubsanacionForm() {
             formData.append('uuid', data.uuid);
             formData.append('tipoInscripcion', data.tipoInscripcion);
 
-            activeFields.forEach(field => {
-                if (data[field.name]?.[0]) {
-                    formData.append(field.name, data[field.name][0]);
-                }
-            });
+            if (hasSelectedFile) {
+                // Agregar labels ANTES que el archivo
+                formData.append('fileLabel', currentSelectedField.label);
+                formData.append('fieldName', currentSelectedField.name);
+                formData.append('file', data.selectedDocFile[0]);
+            }
+
+            if (hasSupportFile) {
+                // Agregar labels ANTES que el archivo
+                formData.append('soporteLabel', supportField.label);
+                formData.append('soporteAclaraciones', data.soporteAclaraciones[0]);
+            }
 
             const response = await fetch(`${API_BASE_URL}/subsanacion`, {
                 method: 'POST',
                 body: formData,
             });
 
-            const responseText = await response.text();
-            let result;
-            try {
-                result = JSON.parse(responseText);
-            } catch (e) {
-                console.error('Failed to parse JSON response:', e);
-                throw new Error('El servidor no devolvió una respuesta válida.');
-            }
+            const result = await response.json();
 
-            if (!response.ok) {
-                throw new Error(result.message || 'Error en el servidor');
-            }
+            if (!response.ok) throw new Error(result.message || 'Error en el servidor');
 
-            Swal.close();
             Swal.fire({
-                title: '¡Subsanación enviada!',
-                html: `
-          <p>Los documentos han sido subsanados correctamente.</p>
-          <p><strong>UUID:</strong> ${data.uuid}</p>
-          <p>Se ha enviado un correo de confirmación.</p>
-          <p style="color: red; font-weight: bold;"> Tenga en cuenta que si ha enviado subsanaciones anteriores, estas serán borradas y solo será tenida en cuenta la más reciente, si omitió algún documento debe realizar un nuevo envío adjuntando la totalidad de los documentos.</p>
-        `,
+                title: '¡Enviado!',
+                text: 'Documentos recibidos correctamente.',
                 icon: 'success',
-                confirmButtonText: 'Aceptar',
                 confirmButtonColor: '#AFE951',
             }).then(() => {
                 reset();
+                setSelectedDocField("");
                 setIsSubmitting(false);
             });
         } catch (error) {
-            console.error('Error al enviar subsanación:', error);
-            Swal.close();
-            Swal.fire({
-                title: 'Error al enviar la subsanación',
-                text: error.message || 'Por favor, inténtalo de nuevo.',
-                icon: 'error',
-                confirmButtonText: 'Reintentar',
-                confirmButtonColor: '#FE525E',
-            });
+            Swal.fire({ title: 'Error', text: error.message, icon: 'error', confirmButtonColor: '#FE525E' });
             setIsSubmitting(false);
         }
     };
@@ -273,40 +250,65 @@ export default function SubsanacionForm() {
                                             Documentos a subsanar
                                         </h5>
                                         <p className="form-label fw-bold" style={{ color: 'var(--color-two)' }}>
-                                            Seleccione únicamente los documentos que desea corregir o complementar.
+                                            Seleccione el documento que desea corregir o complementar.
                                         </p>
 
-                                        {activeFields.map((field) => (
-                                            <div className={`field-container ${!enabledFields[field.name] ? 'muted' : ''}`} key={field.name}>
-                                                <div className="form-check">
-                                                    <input
-                                                        className="form-check-input custom-checkbox"
-                                                        type="checkbox"
-                                                        id={`checkbox-${field.name}`}
-                                                        checked={!!enabledFields[field.name]}
-                                                        onChange={() => handleCheckboxChange(field.name)}
-                                                    />
-                                                    <label htmlFor={`checkbox-${field.name}`} className="form-check-label" style={{ color: 'var(--color-two)' }}>
+                                        {/* Dropdown for selecting document */}
+                                        <div className="mb-4">
+                                            <select
+                                                className="form-select borderGreen"
+                                                value={selectedDocField}
+                                                onChange={(e) => setSelectedDocField(e.target.value)}
+                                            >
+                                                <option value="">-- Seleccione un documento --</option>
+                                                {selectableFields.map(field => (
+                                                    <option key={field.name} value={field.name}>
                                                         {field.label}
-                                                    </label>
-                                                </div>
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                                                {field.description && (
-                                                    <p className="text-muted small" >
-                                                        {field.description}
-                                                    </p>
+                                        {/* Selected Document File Input */}
+                                        {currentSelectedField && (
+                                            <Motion.div
+                                                className="field-container mb-4"
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                key={currentSelectedField.name}
+                                            >
+                                                <label className="form-label fw-bold" style={{ color: 'var(--color-two)' }}>
+                                                    Adjuntar: {currentSelectedField.label}
+                                                </label>
+                                                {currentSelectedField.description && (
+                                                    <p className="text-muted small">{currentSelectedField.description}</p>
                                                 )}
                                                 <input
-                                                    id={field.name}
                                                     type="file"
                                                     className="form-control borderGreen mt-2"
-                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                                    {...register(field.name)}
-                                                    disabled={!enabledFields[field.name]}
+                                                    accept={currentSelectedField.accept || ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"}
+                                                    {...register("selectedDocFile")}
                                                 />
-                                                <span className="small text-muted d-block mt-1">(Máx. 4MB por archivo)</span>
-                                            </div>
-                                        ))}
+                                                <span className="small text-muted d-block mt-1">(Máx. 4MB)</span>
+                                            </Motion.div>
+                                        )}
+
+                                        <hr style={{ borderColor: 'var(--color-five)', opacity: 0.5 }} />
+
+                                        {/* Permanent Support Field */}
+                                        <div className="field-container mt-4">
+                                            <label className="form-label fw-bold" style={{ color: 'var(--color-two)' }}>
+                                                {supportField.label}
+                                            </label>
+                                            <p className="text-muted small">{supportField.description}</p>
+                                            <input
+                                                type="file"
+                                                className="form-control borderGreen mt-2"
+                                                accept=".pdf"
+                                                {...register("soporteAclaraciones")}
+                                            />
+                                            <span className="small text-muted d-block mt-1">(Formato PDF, Máx. 4MB)</span>
+                                        </div>
                                     </Motion.div>
                                 )}
 

@@ -223,11 +223,27 @@ const subsanacionStorage = multer.diskStorage({
   filename: function (req, file, cb) {
     const safeOriginalName = path.basename(file.originalname);
     const uuid = req.body.uuid || 'unknown';
-    cb(null, `subsanacion-${uuid}-${safeOriginalName}`);
+    const timestamp = Date.now();
+    
+    // Obtener el label descriptivo enviado desde el front
+    let descriptor = file.fieldname;
+    if (file.fieldname === 'file' && req.body.fileLabel) {
+      descriptor = req.body.fileLabel;
+    } else if (file.fieldname === 'soporteAclaraciones' && req.body.soporteLabel) {
+      descriptor = req.body.soporteLabel;
+    }
+
+    // Limpiar el descriptor para que sea un nombre de archivo válido
+    const safeDescriptor = descriptor.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    
+    cb(null, `subsanacion-${uuid}-${timestamp}-${safeDescriptor}-${safeOriginalName}`);
   }
 });
 
-const uploadSubsanacion = multer({ storage: subsanacionStorage });
+const uploadSubsanacion = multer({ 
+  storage: subsanacionStorage,
+  limits: { fileSize: 4 * 1024 * 1024 } // 4MB
+});
 
 app.post('/api/subsanacion', uploadSubsanacion.any(), async (req, res) => {
   try {
@@ -264,19 +280,26 @@ app.post('/api/subsanacion', uploadSubsanacion.any(), async (req, res) => {
     }
 
     const fechaSubsanacion = getBogotaDate();
+    const timestamp = Date.now();
 
-    // Log subsanación info
-    let subsanacionLog = `UUID Original: ${uuid}\nFecha Subsanación: ${fechaSubsanacion}\nArchivos:\n`;
+    // Log subsanación info con nombres descriptivos
+    let subsanacionLog = `UUID Original: ${uuid}\nFecha Subsanación: ${fechaSubsanacion}\nArchivos del envío:\n`;
     if (req.files && req.files.length > 0) {
       req.files.forEach(file => {
-        subsanacionLog += `  - ${file.fieldname}: ${file.filename}\n`;
+        let descriptor = file.fieldname;
+        if (file.fieldname === 'file' && req.body.fileLabel) {
+          descriptor = req.body.fileLabel;
+        } else if (file.fieldname === 'soporteAclaraciones' && req.body.soporteLabel) {
+          descriptor = req.body.soporteLabel;
+        }
+        subsanacionLog += `  - ${descriptor}: ${file.filename}\n`;
       });
     }
 
-    // Save a log file in the dynamic subsanacion folder
+    // Guardar un archivo de log ÚNICO para este evento de carga (con timestamp)
     const dynamicSubsanacionUploadDir = path.join(subsanacionDir, `subsanacion-${uuid}`);
-    const logPath = path.join(dynamicSubsanacionUploadDir, `subsanacion-${uuid}-log.txt`);
-    fs.appendFileSync(logPath, subsanacionLog + '\n---\n', 'utf-8');
+    const logPath = path.join(dynamicSubsanacionUploadDir, `subsanacion-${uuid}-${timestamp}-log.txt`);
+    fs.writeFileSync(logPath, subsanacionLog, 'utf-8');
 
     // Send confirmation email
     if (recipientEmail) {
