@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import Swal from 'sweetalert2';
 import { motion as Motion } from 'framer-motion';
@@ -9,16 +9,43 @@ import Logos from '../../assets/logosEmpresas.png';
 
 export default function SubsanacionForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [enabledFields, setEnabledFields] = useState({});
 
     const {
         register,
         handleSubmit,
         reset,
         watch,
+        setValue,
         formState: { errors },
     } = useForm({ mode: 'onBlur' });
 
     const tipoInscripcion = watch('tipoInscripcion');
+
+    const handleCheckboxChange = (fieldName) => {
+        setEnabledFields(prev => {
+            const newState = { ...prev, [fieldName]: !prev[fieldName] };
+            // If the field is being disabled, clear its value.
+            if (!newState[fieldName]) {
+                setValue(fieldName, null);
+            }
+            return newState;
+        });
+    };
+
+    useEffect(() => {
+        // When inscription type changes, reset selections and file inputs
+        Object.keys(enabledFields).forEach(field => {
+            if (enabledFields[field]) {
+                setValue(field, null);
+            }
+        });
+        setEnabledFields({});
+        // We are not including setValue and enabledFields in dependencies to avoid re-running the effect on every render.
+        // We only want this to run when tipoInscripcion changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tipoInscripcion]);
+
 
     // Documentos comunes a ambos tipos
     const commonFields = [
@@ -57,6 +84,26 @@ export default function SubsanacionForm() {
             return;
         }
 
+        const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
+
+        for (const field of activeFields) {
+            if (data[field.name]?.[0]) {
+                const file = data[field.name][0];
+                if (file.size > MAX_FILE_SIZE) {
+                    Swal.fire({
+                        title: 'Archivo demasiado grande',
+                        text: `El archivo "${file.name}" excede el tamaño máximo permitido de 4 MB.`,
+                        icon: 'error',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#FE525E',
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+        }
+
+
         setIsSubmitting(true);
         Swal.fire({
             title: 'Enviando subsanación...',
@@ -81,7 +128,7 @@ export default function SubsanacionForm() {
                 }
             });
 
-            const response = await fetch(`${API_BASE_URL}/api/subsanacion`, {
+            const response = await fetch(`${API_BASE_URL}/subsanacion`, {
                 method: 'POST',
                 body: formData,
             });
@@ -106,6 +153,7 @@ export default function SubsanacionForm() {
           <p>Los documentos han sido subsanados correctamente.</p>
           <p><strong>UUID:</strong> ${data.uuid}</p>
           <p>Se ha enviado un correo de confirmación.</p>
+          <p style="color: red; font-weight: bold;"> Tenga en cuenta que si ha enviado subsanaciones anteriores, estas serán borradas y solo será tenida en cuenta la más reciente, si omitió algún documento debe realizar un nuevo envío adjuntando la totalidad de los documentos.</p>
         `,
                 icon: 'success',
                 confirmButtonText: 'Aceptar',
@@ -150,7 +198,7 @@ export default function SubsanacionForm() {
                                     Subsanación de Documentos
                                 </h2>
                                 <p className="text-center mb-4" style={{ color: 'var(--color-thirteen)', fontSize: '0.95em' }}>
-                                    Utilice este formulario para corregir o complementar la documentación correspondiente al proceso de subasta de certificados de contrucción y desarrollo emitidos bajo la modalidad anticipada.
+                                    Utilice este formulario para corregir o complementar la documentación correspondiente al proceso de subasta de certificados de construcción y desarrollo emitidos bajo la modalidad anticipada.
                                 </p>
                                 <img src={Logos} className="img-fluid img-logos" alt="logosEmpresas" />
                                 <hr style={{ borderColor: 'var(--color-five)', opacity: 0.5 }} />
@@ -181,7 +229,7 @@ export default function SubsanacionForm() {
                                 {/* Tipo de Inscripción */}
                                 <div className="mb-4">
                                     <label className="form-label fw-bold" style={{ color: 'var(--color-two)' }}>
-                                        Tipo de inscripción <span style={{ color: 'var(--color-nine)' }}>*</span>
+                                        Tipo de inscripción original<span style={{ color: 'var(--color-nine)' }}>*</span>
                                     </label>
                                     <div className="d-flex gap-4 custom-check">
                                         <div className="form-check d-flex align-items-center">
@@ -224,15 +272,25 @@ export default function SubsanacionForm() {
                                         <h5 className="mb-3" style={{ color: 'var(--color-three)' }}>
                                             Documentos a subsanar
                                         </h5>
-                                        <p className="mb-3" style={{ color: 'var(--color-thirteen)', fontSize: '0.9em' }}>
+                                        <p className="form-label fw-bold" style={{ color: 'var(--color-two)' }}>
                                             Seleccione únicamente los documentos que desea corregir o complementar.
                                         </p>
 
                                         {activeFields.map((field) => (
-                                            <div className="mb-3" key={field.name}>
-                                                <label htmlFor={field.name} className="form-label" style={{ color: 'var(--color-two)' }}>
-                                                    {field.label}
-                                                </label>
+                                            <div className={`field-container ${!enabledFields[field.name] ? 'muted' : ''}`} key={field.name}>
+                                                <div className="form-check">
+                                                    <input
+                                                        className="form-check-input custom-checkbox"
+                                                        type="checkbox"
+                                                        id={`checkbox-${field.name}`}
+                                                        checked={!!enabledFields[field.name]}
+                                                        onChange={() => handleCheckboxChange(field.name)}
+                                                    />
+                                                    <label htmlFor={`checkbox-${field.name}`} className="form-check-label" style={{ color: 'var(--color-two)' }}>
+                                                        {field.label}
+                                                    </label>
+                                                </div>
+
                                                 {field.description && (
                                                     <p className="text-muted small" >
                                                         {field.description}
@@ -241,10 +299,12 @@ export default function SubsanacionForm() {
                                                 <input
                                                     id={field.name}
                                                     type="file"
-                                                    className="form-control borderGreen"
+                                                    className="form-control borderGreen mt-2"
                                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                                     {...register(field.name)}
+                                                    disabled={!enabledFields[field.name]}
                                                 />
+                                                <span className="small text-muted d-block mt-1">(Máx. 4MB por archivo)</span>
                                             </div>
                                         ))}
                                     </Motion.div>

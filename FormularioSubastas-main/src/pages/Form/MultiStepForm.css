@@ -176,6 +176,44 @@ button.buttons:focus-visible {
 .btn-cancel:hover {
   background-color: #999999 !important;
 }
+
+.field-container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.field-container.muted {
+    opacity: 0.5;
+    pointer-events: none; /* Disables interaction with muted elements */
+}
+
+.field-container.muted .form-check-input {
+    pointer-events: all; /* Re-enables interaction only for the checkbox */
+}
+
+.form-check-input.custom-checkbox {
+    width: 25px; /* Bigger checkbox */
+    height: 25px; /* Bigger checkbox */
+    margin-top: 0.1rem;
+    margin-right: 0.5rem; /* Add spacing to the right of the checkbox */
+    border-radius: 4px; /* Keep it square */
+}
+
+.form-check-input.custom-checkbox:checked {
+    background-color: var(--color-five);
+    border-color: var(--color-three);
+}
+
+.form-check-input.custom-checkbox:checked::after {
+    content: "✔";
+    color: var(--color-three) !important;
+    font-size: 20px;
+    position: absolute;
+    left: 2px;
+    top: -4px;
+}
+
 @media (max-width: 1300px) {
   .cardPpal {
     margin: 0% 10% 0.5% 10%;
