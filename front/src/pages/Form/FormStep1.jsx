@@ -146,7 +146,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
       <br />
       <h2 className="card-title text-center">FORMATO DE INSCRIPCIÓN Y ACEPTACIÓN DE TÉRMINOS Y CONDICIONES</h2>
       <br />
-      <h6 className="text-center text-muted mb-3">PROCESO DE SUBASTA DE CERTIFICADOS DE CONSTRUCCIÓN Y DESARROLLO EMITIDOS BAJO LA MODALIDAD ANTICIPADA</h6>
+      <h6 className="text-center text-muted mb-3">SEGUNDA SUBASTA DE CERTIFICADOS DE CONSTRUCCIÓN Y DESARROLLO EMITIDOS BAJO LA MODALIDAD ANTICIPADA</h6>
 
       <div className="borderGreen rounded-4 mb-3 p-4">
         <div className="row mb-3">
@@ -156,18 +156,18 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
           </div>
           <div className="col-md-12 col-lg-6">
             <label className="form-label"><strong>Fecha de Convocatoria:</strong></label>
-            <div className="p-2 mt-1 titulos">26 de diciembre de 2025</div>
+            <div className="p-2 mt-1 titulos">14 de septiembre de 2026</div>
           </div>
         </div>
 
         <div className="row mb-3">
           <div className="col-md-12 col-lg-6">
             <label className="form-label"><strong>Fecha de Inicio del Proceso de Inscripción:</strong></label>
-            <div className="p-2 mt-1 titulos">20 de enero de 2026</div>
+            <div className="p-2 mt-1 titulos">21 de septiembre de 2026</div>
           </div>
           <div className="col-md-12 col-lg-6">
           <label className="form-label"><strong>Plazo Límite del Proceso de Inscripción:</strong></label>
-            <div className="p-2 mt-1 titulos">9 de febrero de 2026</div>
+            <div className="p-2 mt-1 titulos">9 de octubre de 2026</div>
           </div>
         </div>
         <br />
@@ -218,7 +218,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
           <hr />
           <h5>Inscripción individual</h5>
           <div className="col-md-12">
-            <label className="form-label">Correo Electrónico *</label>
+            <label className="form-label">Correo Electrónico (para notificaciones oficiales) *</label>
             <div className="input-group">
               <span className="input-group-text"><FaEnvelope /></span>
               <input
@@ -318,7 +318,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
           </div>
 
           <div className="col-md-12 col-lg-6">
-            <label className="form-label">Cédula de ciudadanía del Representante *</label>
+            <label className="form-label">Cédula de ciudadanía del Representante Legal *</label>
             <input
               className={`form-control ${errors.cedulaRep ? 'is-invalid' : ''}`}
               {...register('cedulaRep', {
@@ -400,7 +400,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                 <div className="row gx-3 gy-2">
 
                   <div className="col-md-12">
-                    <label className="form-label">Correo Electrónico *</label>
+                    <label className="form-label">Correo Electrónico (para notificaciones oficiales) *</label>
                     <div className="input-group">
                       <span className="input-group-text"><FaEnvelope /></span>
                       <input
@@ -487,7 +487,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                   </div>
 
                   <div className="col-md-12">
-                    <label className="form-label">Nombre del Representante Legal *</label>
+                    <label className="form-label">Nombre del Representante Legal Principal *</label>
                     <input
                       className={`form-control ${errors.integrantes?.[index]?.representante ? 'is-invalid' : ''}`}
                       {...register(`integrantes.${index}.representante`, {
@@ -500,7 +500,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                   </div>
 
                   <div className="col-md-12">
-                    <label className="form-label">Cédula de ciudadanía del Representante *</label>
+                    <label className="form-label">Cédula de ciudadanía del Representante Legal Principal *</label>
                     <input
                       className={`form-control ${errors.integrantes?.[index]?.cedulaRep ? 'is-invalid' : ''}`}
                       {...register(`integrantes.${index}.cedulaRep`, {

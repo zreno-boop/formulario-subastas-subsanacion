@@ -14,9 +14,39 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
   const fechaHoy = new Date();
   const maxFechaHoy = new Date(fechaHoy);
   maxFechaHoy.setDate(maxFechaHoy.getDate());
-  const fechaLimite = new Date(2026, 1, 9); // Mes 1 = febrero
+  const fechaLimite = new Date(2026, 10, 9); // Mes 10 = octubre
   const maxFecha = new Date(fechaLimite);
   maxFecha.setDate(maxFecha.getDate() + 150);
+
+  // 1. Fechas del Proceso de Subasta
+  const fechaLimiteInscripcion = new Date(2026, 9, 9); // Mes 0 = enero, 9 = octubre
+  fechaLimiteInscripcion.setHours(0, 0, 0, 0);
+
+  const fechaExpedicionWatch = watch('fechaExpedicion');
+
+  // Cálculo de fechas límite para la vigencia 
+
+  const maxVigencia = new Date(fechaLimiteInscripcion);
+  maxVigencia.setDate(maxVigencia.getDate() + 150); // Hasta 150 días calendario posteriores
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const parseLocalDate = (dateString) => {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0); // Resetea las horas siempre
+    return date;
+  };
+  
+  const formatToLocalDateString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const allowedTypes = [
     "application/pdf",
@@ -83,10 +113,10 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
 
       <br />
       <p className="text-muted small">
-        Al adjuntar los documentos requeridos, tenga en cuenta que todos los archivos deben estar en formato <strong>PDF, XLS o XLSX</strong> y no deben superar un tamaño máximo de <strong>60 MB</strong>.
+        Al adjuntar los documentos requeridos, tenga en cuenta que todos los archivos deben estar en formato <strong>PDF, XLS o XLSX</strong> y no deben superar un tamaño máximo de <strong>5 MB</strong>.
       </p>
       <div className="borderGreen rounded-4 mb-3 p-4">
-        <h5 className="text-muted">A. Documentación Obligatoria</h5>
+        <h5 className="text-muted">A. Documentación Legal y Financiera</h5>
         <p>
           El proponente deberá aportar la siguiente documentación, de carácter obligatorio, para efectos de la verificación de su existencia y representación legal, tratamiento de datos y solvencia económica:
         </p>
@@ -121,7 +151,7 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
         <div className="mb-3">
           <label htmlFor="estadosFinancieros" className="form-label"><strong>2. Estados Financieros Auditados *</strong></label>
           <p className="text-muted small">
-            Últimos estados financieros auditados disponibles (año 2024) ya sea del proponente inscrito de manera individual o de cada integrante de la
+            Últimos estados financieros auditados disponibles (año 2025) ya sea del proponente inscrito de manera individual o de cada integrante de la
             estructura plural.
           </p>
           <input
@@ -325,7 +355,7 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
               name="fechaExpedicion"
               rules={{
                 required: 'Fecha de expedición obligatoria',
-                validate: (v) => {
+                /* validate: (v) => {
                   if (!v) return 'Fecha obligatoria';
 
                   const fecha = new Date(v);
@@ -341,17 +371,33 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
                     return 'La fecha de expedición no puede ser futura';
 
                   return true;
-                },
+                }, */
+                validate: (v) => {
+                  if (!v) return 'Fecha obligatoria';
+                  const expedicion = parseLocalDate(v);
+                  
+                  if (expedicion.getTime() > hoy.getTime()) {
+                    return 'La fecha de expedición no puede ser una fecha futura';
+                  }
+                  return true;
+                }
               }}
               render={({ field }) => (
                 <DatePicker
                   locale="es"
                   className={`form-control ${errors.fechaExpedicion ? 'is-invalid' : ''}`}
                   placeholderText="dd/MM/yyyy"
-                  selected={field.value ? new Date(field.value) : null}
-                  onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
+                  selected={parseLocalDate(field.value) || null}
+                  /* onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
                   dateFormat="dd/MM/yyyy"
-                  maxDate={maxFechaHoy}
+                  maxDate={maxFechaHoy} */
+                  onChange={(d) => {
+                    field.onChange(formatToLocalDateString(d));
+                    // Dispara re-validación de vigencia al cambiar expedición
+                    trigger('vigenciaInstrumento');
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  maxDate={hoy}
                 />
               )}
             />
@@ -368,7 +414,7 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
               name="vigenciaInstrumento"
               rules={{
                 required: 'Vigencia obligatoria',
-                validate: (v) => {
+                /* validate: (v) => {
                   if (!v) return 'Vigencia obligatoria';
 
                   const vigencia = new Date(v);
@@ -385,20 +431,51 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
                   }
 
                   return true;
-                },
+                }, */
+                validate: (v) => {
+                  if (!v) return 'Vigencia obligatoria';
+
+                  const vigencia = parseLocalDate(v);
+
+                  // 1. Validar contra Fecha de Expedición
+                  if (fechaExpedicionWatch) {
+                    const expedicion = parseLocalDate(fechaExpedicionWatch);
+                    if (vigencia.getTime() < expedicion.getTime()) {
+                      return 'La vigencia no puede ser anterior a la fecha de expedición';
+                    }
+                  }
+
+                  // 2. Validar plazo máximo de 150 días
+                  if (vigencia.getTime() > maxVigencia.getTime()) {
+                    return 'La vigencia no puede superar los 150 días calendario posteriores al límite de inscripción';
+                  }
+
+                  return true;
+                }
               }}
-              render={({ field }) => (
-                <DatePicker
-                  locale="es"
-                  className={`form-control ${errors.vigenciaInstrumento ? 'is-invalid' : ''}`}
-                  placeholderText="dd/MM/yyyy"
-                  selected={field.value ? new Date(field.value) : null}
-                  onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
-                  dateFormat="dd/MM/yyyy"
-                  minDate={fechaLimite}
-                  maxDate={maxFecha}
-                />
-              )}
+              render={({ field }) => {
+                // El piso del DatePicker ahora es exactamente la Fecha de Expedición seleccionada
+                const expedicion = fechaExpedicionWatch ? parseLocalDate(fechaExpedicionWatch) : null;
+                const minDateCalendar = expedicion || hoy;
+
+                return (
+                  <DatePicker
+                    locale="es"
+                    className={`form-control ${errors.vigenciaInstrumento ? 'is-invalid' : ''}`}
+                    placeholderText="dd/MM/yyyy"
+                    /* selected={field.value ? new Date(field.value) : null}
+                    onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
+                    dateFormat="dd/MM/yyyy"
+                    minDate={fechaLimite}
+                    maxDate={maxFecha} */
+                    selected={parseLocalDate(field.value)}
+                    onChange={(d) => field.onChange(formatToLocalDateString(d))}
+                    dateFormat="dd/MM/yyyy"
+                    minDate={minDateCalendar}
+                    maxDate={maxVigencia}
+                  />
+                );
+              }}
             />
             <div className="invalid-feedback">{errors.vigenciaInstrumento?.message}</div>
           </div>

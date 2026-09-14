@@ -8,7 +8,6 @@ import FormStep4 from './FormStep4';
 import ProgressBar from './ProgressBar';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import LogoRenobo from '../../assets/logoRenobo.png';
-import { API_BASE_URL } from '../../config';
 import './MultiStepForm.css';
 
 export default function MultiStepForm() {
@@ -194,7 +193,7 @@ export default function MultiStepForm() {
         formData.append("formFileSign", data.formFileSign[0]);
 
 
-      const response = await fetch(`${API_BASE_URL}/api/upload`, {
+      const response = await fetch('https://maps.renobo.com.co/backf/api/upload', {
         method: 'POST',
         body: formData,
       });
