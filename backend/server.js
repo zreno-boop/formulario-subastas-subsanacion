@@ -65,6 +65,14 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'up',
+    timestamp: getBogotaDate(),
+    service: 'RENOBO Form API'
+  });
+});
+
 app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
   try {
     const fechaRecepcion = getBogotaDate();
@@ -218,7 +226,7 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
 
       const revisoresMailOptions = {
         from: `"Sistema Subastas RENOBO" <${process.env.GMAIL_USER}>`,
-        to: revisoresList.join(','), // Envía a todos los revisores en un solo correo
+        to: revisoresList.join(','),
         subject: `[NUEVO REGISTRO] Radicado ${submissionId} - ${req.body.razonSocial || 'Nuevo Postulante'}`,
         html: `
           <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
@@ -250,7 +258,7 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
         console.error('Error enviando correo a revisores:', err);
       }
     } else {
-      console.warn('No se han definido REVISORES_EMAILS en el archivo .env');
+      console.warn('No se han definido ADMIN_EMAILS en el archivo .env');
     }
 
     // 5. RESPUESTA AL FRONTEND
@@ -264,4 +272,9 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
     console.error('Error general en POST /api/upload:', error);
     res.status(500).json({ message: 'Ocurrió un error al procesar la solicitud.' });
   }
+});
+
+// INICIAR EL SERVIDOR
+app.listen(port, () => {
+  console.log(`Servidor de RENOBO corriendo en http://localhost:${port}`);
 });
