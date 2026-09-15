@@ -10,9 +10,6 @@ const nodemailer = require('nodemailer');
 const app = express();
 const port = process.env.PORT || 3001;
 
-/**
- * Genera la fecha y hora exacta de Colombia (UTC-5)
- */
 const getBogotaDate = () => {
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
@@ -26,7 +23,6 @@ const getBogotaDate = () => {
   }).format(new Date());
 };
 
-// --- Nodemailer Transporter Setup ---
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -40,14 +36,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const corsOptions = {
-  origin: '*',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-};
-
-app.use(cors(corsOptions));
+app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -58,35 +47,33 @@ const createUploadDir = (req, res, next) => {
     fs.mkdirSync(req.uploadPath, { recursive: true });
     next();
   } catch (error) {
-    console.error('Failed to create upload directory:', error);
-    res.status(500).json({ message: 'Server error: could not create upload directory.' });
+    console.error('Error al crear directorio:', error);
+    res.status(500).json({ message: 'Error en el servidor al crear la carpeta.' });
   }
 };
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, req.uploadPath);
-  },
-  filename: function (req, file, cb) {
+  destination: (req, file, cb) => cb(null, req.uploadPath),
+  filename: (req, file, cb) => {
     const safeOriginalName = path.basename(file.originalname);
     cb(null, Date.now() + '-' + safeOriginalName);
   }
 });
 
-const upload = multer({ storage: storage });
-
-app.get('/', (req, res) => {
-  res.send('Backend is running!');
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
 app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
   try {
-    // GENERACIÓN DE LA FECHA (SIN DEPENDENCIA DEL FRONT)
     const fechaRecepcion = getBogotaDate();
+    const submissionId = path.basename(req.uploadPath);
 
-    // 1. Guardar en CSV
+    // 1. GENERACIÓN DEL CSV CON TODOS LOS DATOS RECIBIDOS
     let csvContent = 'Campo,Valor\n';
-    csvContent += `"Fecha de Recepción","${fechaRecepcion}"\n`; // <--- Sello de tiempo en el archivo
+    csvContent += `"Fecha de Recepcion","${fechaRecepcion}"\n`;
+    csvContent += `"Numero de Radicado","${submissionId}"\n`;
 
     for (const key in req.body) {
       if (key === 'proyectos' || key === 'integrantes') continue;
@@ -96,7 +83,6 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
       }
     }
 
-    // Proceso de Proyectos
     if (req.body.proyectos) {
       try {
         const proyectos = JSON.parse(req.body.proyectos);
@@ -116,11 +102,10 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
           });
         }
       } catch (e) {
-        csvContent += '"proyectos","Error al procesar los datos del proyecto"\n';
+        csvContent += '"proyectos","Error al procesar datos"\n';
       }
     }
 
-    // Proceso de Integrantes
     if (req.body.integrantes) {
       try {
         const integrantes = JSON.parse(req.body.integrantes);
@@ -140,11 +125,10 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
           });
         }
       } catch (e) {
-        csvContent += '"integrantes","Error al procesar los datos de los integrantes"\n';
+        csvContent += '"integrantes","Error al procesar datos"\n';
       }
     }
 
-    // Archivos Adjuntos
     if (req.files && req.files.length > 0) {
       csvContent += `\n"Archivos Adjuntos",""\n`;
       req.files.forEach(file => {
@@ -155,195 +139,129 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
     const csvFilePath = path.join(req.uploadPath, 'datos_formulario.csv');
     fs.writeFileSync(csvFilePath, csvContent, 'utf-8');
 
-    // 2. Envío de correos
-    const recipients = [];
-    if (req.body.email) recipients.push(req.body.email);
+    // 2. EXTRAER CORREOS DEL USUARIO E INTEGRANTES (PARA CONFIRMACIÓN DE RECEPCIÓN)
+    const userRecipients = [];
+    if (req.body.email) userRecipients.push(req.body.email.trim());
+
     if (req.body.integrantes) {
       try {
         const integrantes = JSON.parse(req.body.integrantes);
         if (Array.isArray(integrantes)) {
-          integrantes.forEach(integ => { if (integ.email) recipients.push(integ.email); });
-        }
-      } catch (e) { console.error('Error email parse:', e); }
-    }
-
-    const uniqueRecipients = [...new Set(recipients)];
-    const submissionId = path.basename(req.uploadPath);
-
-    for (const recipientEmail of uniqueRecipients) {
-      const mailOptions = {
-        from: `"RENOBO" <${process.env.GMAIL_USER}>`,
-        to: recipientEmail,
-        subject: 'Confirmación de envío de formulario',
-        html: `
-          <p>Estimado participante,</p>
-          <p>Hemos recibido correctamente su inscripción.</p>
-          <p>Número de radicado: <strong>${submissionId}</strong></p>
-          <p>Fecha de recepción: <strong>${fechaRecepcion} (Hora Colombia)</strong></p>
-          <br>
-          <p>Atentamente,<br><strong>Equipo de Subastas</strong></p>
-        `
-      };
-      try {
-        await transporter.sendMail(mailOptions);
-      } catch (err) {
-        console.error(`Email error to ${recipientEmail}:`, err);
-      }
-    }
-
-    // 3. Respuesta final (El JSON que recibe el front)
-    res.status(200).json({
-      message: 'Form data and files uploaded successfully!',
-      submissionId: submissionId,
-      timestamp: fechaRecepcion // <--- Se confirma el tiempo en la respuesta JSON
-    });
-
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'An error occurred while processing the form.' });
-  }
-});
-
-// --- SUBSANACIÓN ---
-
-const subsanacionDir = path.join(__dirname, 'uploads', 'subsanacion');
-if (!fs.existsSync(subsanacionDir)) {
-  fs.mkdirSync(subsanacionDir, { recursive: true });
-}
-
-const subsanacionStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uuid = req.body.uuid || 'unknown';
-    const dynamicSubsanacionDir = path.join(subsanacionDir, `subsanacion-${uuid}`);
-    if (!fs.existsSync(dynamicSubsanacionDir)) {
-      fs.mkdirSync(dynamicSubsanacionDir, { recursive: true });
-    }
-    cb(null, dynamicSubsanacionDir);
-  },
-  filename: function (req, file, cb) {
-    const safeOriginalName = path.basename(file.originalname);
-    const uuid = req.body.uuid || 'unknown';
-    const timestamp = Date.now();
-    
-    // Obtener el label descriptivo enviado desde el front
-    let descriptor = file.fieldname;
-    if (file.fieldname === 'file' && req.body.fileLabel) {
-      descriptor = req.body.fileLabel;
-    } else if (file.fieldname === 'soporteAclaraciones' && req.body.soporteLabel) {
-      descriptor = req.body.soporteLabel;
-    }
-
-    // Limpiar el descriptor para que sea un nombre de archivo válido
-    const safeDescriptor = descriptor.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    
-    cb(null, `subsanacion-${uuid}-${timestamp}-${safeDescriptor}-${safeOriginalName}`);
-  }
-});
-
-const uploadSubsanacion = multer({ 
-  storage: subsanacionStorage,
-  limits: { fileSize: 4 * 1024 * 1024 } // 4MB
-});
-
-app.post('/api/subsanacion', uploadSubsanacion.any(), async (req, res) => {
-  try {
-    const { uuid } = req.body;
-
-    if (!uuid) {
-      return res.status(400).json({ message: 'El UUID de envío es requerido.' });
-    }
-
-    // Validate that the original submission exists
-    const originalDir = path.join(uploadsDir, uuid);
-    if (!fs.existsSync(originalDir)) {
-      return res.status(404).json({ message: 'No se encontró un envío con ese UUID. Verifique el número de radicado.' });
-    }
-
-    // Try to get email from original CSV
-    let recipientEmail = null;
-    const csvPath = path.join(originalDir, 'datos_formulario.csv');
-    if (fs.existsSync(csvPath)) {
-      try {
-        const csvContent = fs.readFileSync(csvPath, 'utf-8');
-        const lines = csvContent.split('\n');
-        for (const line of lines) {
-          // Match "email","value" pattern in CSV
-          const match = line.match(/^"email","(.+?)"$/i);
-          if (match) {
-            recipientEmail = match[1];
-            break;
-          }
+          integrantes.forEach(integ => {
+            if (integ.email) userRecipients.push(integ.email.trim());
+          });
         }
       } catch (e) {
-        console.error('Error reading CSV for email:', e);
+        console.error('Error parseando emails de integrantes:', e);
       }
     }
 
-    const fechaSubsanacion = getBogotaDate();
-    const timestamp = Date.now();
+    const uniqueUserRecipients = [...new Set(userRecipients)].filter(Boolean);
 
-    // Log subsanación info con nombres descriptivos
-    let subsanacionLog = `UUID Original: ${uuid}\nFecha Subsanación: ${fechaSubsanacion}\nArchivos del envío:\n`;
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        let descriptor = file.fieldname;
-        if (file.fieldname === 'file' && req.body.fileLabel) {
-          descriptor = req.body.fileLabel;
-        } else if (file.fieldname === 'soporteAclaraciones' && req.body.soporteLabel) {
-          descriptor = req.body.soporteLabel;
-        }
-        subsanacionLog += `  - ${descriptor}: ${file.filename}\n`;
-      });
-    }
-
-    // Guardar un archivo de log ÚNICO para este evento de carga (con timestamp)
-    const dynamicSubsanacionUploadDir = path.join(subsanacionDir, `subsanacion-${uuid}`);
-    const logPath = path.join(dynamicSubsanacionUploadDir, `subsanacion-${uuid}-${timestamp}-log.txt`);
-    fs.writeFileSync(logPath, subsanacionLog, 'utf-8');
-
-    // Send confirmation email
-    if (recipientEmail) {
-      const mailOptions = {
+    // 3. ENVÍO A) CORREO DE CONFIRMACIÓN AL USUARIO (SIN ADJUNTOS)
+    for (const recipientEmail of uniqueUserRecipients) {
+      const userMailOptions = {
         from: `"RENOBO" <${process.env.GMAIL_USER}>`,
         to: recipientEmail,
-        subject: 'Confirmación de subsanación de documentos',
+        subject: `Confirmación de Recepción - Radicado ${submissionId}`,
         html: `
-          <p>Estimado participante,</p>
-          <p>Hemos recibido correctamente la <strong>subsanación</strong> de documentos para su inscripción.</p>
-          <p>Número de radicado original: <strong>${uuid}</strong></p>
-          <p>Fecha de subsanación: <strong>${fechaSubsanacion} (Hora Colombia)</strong></p>
-          <p>Los documentos enviados han sido registrados exitosamente.</p>
-          <br>
-          <p>Atentamente,<br><strong>Equipo de Subastas</strong></p>
+          <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <h2>Confirmación de envío de formulario</h2>
+            <p>Estimado participante,</p>
+            <p>Hemos recibido correctamente su inscripción e información asociada.</p>
+            
+            <div style="background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Número de radicado:</strong> ${submissionId}</p>
+              <p style="margin: 5px 0;"><strong>Fecha de recepción:</strong> ${fechaRecepcion} (Hora Colombia)</p>
+            </div>
+
+            <p>Su solicitud ha sido radicada y se encuentra en proceso de revisión por nuestro equipo.</p>
+            <br>
+            <p>Atentamente,<br><strong>Equipo de Subastas - RENOBO</strong></p>
+          </div>
         `
       };
+
       try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Subsanación email sent to ${recipientEmail}`);
+        await transporter.sendMail(userMailOptions);
+        console.log(`Confirmación enviada al usuario: ${recipientEmail}`);
       } catch (err) {
-        console.error(`Email error to ${recipientEmail}:`, err);
+        console.error(`Error enviando confirmación a ${recipientEmail}:`, err);
       }
-    } else {
-      console.warn(`No email found for UUID ${uuid}, skipping email notification.`);
     }
 
+    // 4. ENVÍO B) CORREO INTERNO A LOS REVISORES (CON DATOS Y ADJUNTOS)
+    const revisoresRaw = process.env.ADMIN_EMAILS || '';
+    const revisoresList = revisoresRaw.split(',').map(e => e.trim()).filter(Boolean);
+
+    if (revisoresList.length > 0) {
+      let mailAttachments = [{ filename: 'datos_formulario.csv', path: csvFilePath }];
+      let totalSizeBytes = fs.statSync(csvFilePath).size;
+
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          totalSizeBytes += file.size;
+          mailAttachments.push({
+            filename: file.originalname,
+            path: file.path
+          });
+        }
+      }
+
+      // Validar límite total de adjuntos para Gmail (~22 MB)
+      const MAX_GMAIL_BYTES = 22 * 1024 * 1024;
+      let limitExceeded = false;
+      if (totalSizeBytes > MAX_GMAIL_BYTES) {
+        limitExceeded = true;
+        mailAttachments = [{ filename: 'datos_formulario.csv', path: csvFilePath }];
+      }
+
+      const revisoresMailOptions = {
+        from: `"Sistema Subastas RENOBO" <${process.env.GMAIL_USER}>`,
+        to: revisoresList.join(','), // Envía a todos los revisores en un solo correo
+        subject: `[NUEVO REGISTRO] Radicado ${submissionId} - ${req.body.razonSocial || 'Nuevo Postulante'}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <h2>Nuevo Formulario Recibido para Revisión</h2>
+            <p>Se ha registrado un nuevo formulario en la plataforma:</p>
+            
+            <ul>
+              <li><strong>Radicado:</strong> ${submissionId}</li>
+              <li><strong>Fecha:</strong> ${fechaRecepcion}</li>
+              <li><strong>Razón Social / Nombre:</strong> ${req.body.razonSocial || 'N/A'}</li>
+              <li><strong>NIT:</strong> ${req.body.nit || 'N/A'}</li>
+              <li><strong>Email de contacto:</strong> ${req.body.email || 'N/A'}</li>
+              <li><strong>Tipo de Inscripción:</strong> ${req.body.tipoInscripcion || 'N/A'}</li>
+            </ul>
+
+            ${limitExceeded 
+              ? `<p style="color: #d9534f;"><strong>Atención:</strong> Los archivos subidos superan los 22MB. No se enviaron en este correo por límite de peso, pero se encuentran guardados en el servidor en la carpeta: <code>uploads/${submissionId}</code>.</p>`
+              : `<p>Se adjuntan a este correo el resumen en formato CSV y todos los documentos aportados por el solicitante.</p>`
+            }
+          </div>
+        `,
+        attachments: mailAttachments
+      };
+
+      try {
+        await transporter.sendMail(revisoresMailOptions);
+        console.log(`Notificación con datos enviada a revisores: ${revisoresList.join(', ')}`);
+      } catch (err) {
+        console.error('Error enviando correo a revisores:', err);
+      }
+    } else {
+      console.warn('No se han definido REVISORES_EMAILS en el archivo .env');
+    }
+
+    // 5. RESPUESTA AL FRONTEND
     res.status(200).json({
-      message: 'Subsanación recibida exitosamente.',
-      uuid: uuid,
-      timestamp: fechaSubsanacion,
-      filesReceived: req.files ? req.files.length : 0
+      message: 'Formulario procesado correctamente.',
+      submissionId: submissionId,
+      timestamp: fechaRecepcion
     });
 
   } catch (error) {
-    console.error('Error en subsanación:', error);
-    res.status(500).json({ message: 'Error al procesar la subsanación.' });
+    console.error('Error general en POST /api/upload:', error);
+    res.status(500).json({ message: 'Ocurrió un error al procesar la solicitud.' });
   }
-});
-
-app.use((err, req, res, next) => {
-  res.status(500).json({ message: 'Internal Server Error', error: err.message });
-});
-
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
 });

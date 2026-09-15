@@ -194,6 +194,7 @@ export default function MultiStepForm() {
 
 
       const response = await fetch('https://maps.renobo.com.co/backf/api/upload', {
+      //const response = await fetch('localhost:3000/api/upload', {    
         method: 'POST',
         body: formData,
       });
