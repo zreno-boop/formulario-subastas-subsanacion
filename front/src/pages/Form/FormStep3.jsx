@@ -144,16 +144,6 @@ export default function FormStep3({ register, control, errors, fields, append, r
                 <div className="invalid-feedback">{errors.proyectos?.[index]?.ubicacion?.message}</div>
               </div>
 
-              {/* <div className="col-md-12">
-                <label className="form-label">Tamaño (Metros cuadrados de construcción total) *</label>
-                <input
-                  type="number"
-                  className={`form-control ${errors.proyectos?.[index]?.tamano ? 'is-invalid' : ''}`}
-                  {...register(`proyectos.${index}.tamano`, { required: 'Tamaño obligatorio', valueAsNumber: true, min: { value: 1, message: 'Debe ser mayor que cero' }, max: { value: 96435.38, message: `Debe ser menor que 96435.38` } })}
-                />
-                <div className="invalid-feedback">{errors.proyectos?.[index]?.tamano?.message}</div>
-              </div> */}
-
               <div className="col-md-12">
                 <label className="form-label">Estado Actual del Proyecto *</label>
                 <select
@@ -255,8 +245,7 @@ export default function FormStep3({ register, control, errors, fields, append, r
 
                 <div className="col-md-12">
                   <label className="form-label">Número de unidades de vivienda a desarrollar</label>
-                  <p className="text-muted small"> Cantidad total de unidades de vivienda que se incluirán en el
-                    desarrollo del proyecto.
+                  <p className="text-muted small"> Cantidad total de unidades de vivienda que se incluirán en el desarrollo del proyecto, desagregadas por su tipología de vivienda.
                   </p>
                   <input
                     type="number"
@@ -316,12 +305,6 @@ export default function FormStep3({ register, control, errors, fields, append, r
                   <div className="invalid-feedback">{errors.proyectos?.[index]?.desgloseArea?.message}</div>
                 </div>
 
-
-
-
-
-
-
             </div>
             <br />
             <p className="text-muted small">
@@ -332,104 +315,6 @@ export default function FormStep3({ register, control, errors, fields, append, r
             </p>
             <hr />
             <br />
-
-            {/* <p className="d-inline-flex gap-1">
-              <button className="btn buttonEmpty" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComplementarios" aria-expanded="false" aria-controls="collapseComplementarios">
-                <h5 className="text-muted">B. Información complementaria <FaCaretDown /></h5>
-              </button>
-            </p>
-            <div className="collapse" id="collapseComplementarios">
-              <div className="card card-body border-0 p-0">
-
-                <p className="text-muted small"> El proponente, que se presente de manera individual o como estructura plural, podrá incluir
-                  como requisitos complementarios, y no obligatorios, los siguientes documentos:
-                </p>
-
-                <div className="col-md-12 col-lg-6">
-                  <label className="form-label me-2">Fecha aproximada de licencia</label>
-                  <p className="text-muted small"> Fecha estimada en la que se obtendrá la licencia del proyecto.
-                  </p>
-                  <Controller
-                    control={control}
-                    name={`proyectos.${index}.fechaLicencia`}
-                    render={({ field }) => (
-                      <DatePicker
-                        className={`form-control ${errors.proyectos?.[index]?.fechaLicencia ? 'is-invalid' : ''}`}
-                        placeholderText="dd/MM/yyyy"
-                        selected={field.value ? new Date(field.value) : null}
-                        onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
-                        dateFormat="dd/MM/yyyy"
-                      />
-                    )}
-                  />
-                  <div className="invalid-feedback">{errors.fechaLicencia?.message}</div>
-                </div>
-
-                <div className="col-md-12">
-                  <label className="form-label">Número de unidades de vivienda a desarrollar</label>
-                  <p className="text-muted small"> Cantidad total de unidades de vivienda que se incluirán en el
-                    desarrollo del proyecto.
-                  </p>
-                  <input
-                    type="number"
-                    className={`form-control ${errors.proyectos?.[index]?.numUnidades ? 'is-invalid' : ''}`}
-                    {...register(`proyectos.${index}.numUnidades`, { valueAsNumber: true, min: { value: 1, message: 'Debe ser mayor que cero' } })}
-                  />
-                  <div className="invalid-feedback">{errors.proyectos?.[index]?.numUnidades?.message}</div>
-                </div>
-
-                <div className="col-md-12">
-                  <label className="form-label">Edificabilidad</label>
-                  <p className="text-muted small"> Índice de edificabilidad previsto para el desarrollo
-                    del proyecto.
-                  </p>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className={`form-control ${errors.proyectos?.[index]?.indiceEdificabilidad ? 'is-invalid' : ''}`}
-                    {...register(`proyectos.${index}.indiceEdificabilidad`, { valueAsNumber: true, min: { value: 0, message: 'Debe ser mayor o igual a cero' } })}
-                  />
-                  <div className="invalid-feedback">{errors.proyectos?.[index]?.indiceEdificabilidad?.message}</div>
-                </div>
-
-                <div className="col-md-12">
-                  <label className="form-label">Área construida en el uso</label>
-                  <p className="text-muted small"> Desglose del área construida (m²) según el uso en el proyecto (residencial, comercial, parqueadero, servicios, entre otros).
-                     Área construida en el uso: Corresponde al área construida para un uso en particular, 
-                    descontando muros de fachada, muros perimetrales, ductos, estructura, equipamiento comunal privado, circulaciones 
-                    comunes y cuartos de acopio. Esta área se usa para efectos del cálculo de equipamiento comunal privado 
-                    (Ver 1.3., 1.3.2., A. Exigencia de equipamiento comunal privado), cuartos de acopio (Ver artículo 190, numeral 7 
-                    del Decreto Distrital 555 de 2021) y área mínima habitable de la unidad de vivienda (Ver artículo 384 del Decreto
-                     Distrital 555 de 2021). (Ver ilustración 01 del Anexo 5 del Decreto Distrital 555 de 2021). Esta definición
-                      corresponde a la dispuesta en la página 7 del numeral 1.1. del Capítulo 1 “Normas Urbanísticas Comunes” del 
-                      Anexo No. 5 del Decreto Distrital 
-                  </p>
-                  <textarea
-                    className={`form-control ${errors.proyectos?.[index]?.desgloseArea ? 'is-invalid' : ''}`}
-                    placeholder={`Ej:
-                      Residencial: 1.250 m²
-                      Comercial: 430 m²`}
-                    rows={4}
-                    {...register(`proyectos.${index}.desgloseArea`, {
-                      pattern: {
-                        value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9:\s\n]+$/,
-                        message: 'Formato esperado: Uso: 1.250 m²',
-                      },
-                    })}
-                  />
-                  <div className="invalid-feedback">{errors.proyectos?.[index]?.desgloseArea?.message}</div>
-                </div>
-
-                <br />
-                <p className="text-muted small">
-                  <strong>Nota: </strong>La información aportada por los proponentes en el numeral B. “INFORMACIÓN
-                  COMPLEMENTARIA” no será considerada como criterio para aceptar o confirmar la inscripción.
-                </p>
-
-
-              </div>
-            </div> */}
 
           </div>
         </div>
