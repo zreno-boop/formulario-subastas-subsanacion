@@ -1,8 +1,10 @@
 import Swal from 'sweetalert2';
+//import DatePicker from 'react-datepicker';
 import { useEffect } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import { FaEnvelope, FaPhoneAlt, FaLongArrowAltRight, FaTrash, FaPlus } from 'react-icons/fa';
 import Logos from '../../assets/logosEmpresas.png';
+
 
 export default function FormStep1({ register, errors, watch, setValue, clearErrors, trigger, fieldsIntegrantes, appendIntegrante, removeIntegrante, replaceIntegrantes, next }) {
 
@@ -124,13 +126,16 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
     const valid = await trigger(fieldsToValidate);
 
     if (!valid) {
-      setTimeout(() => {
-        const firstInvalidElement = document.querySelector(".is-invalid");
-        if (firstInvalidElement) {
-          firstInvalidElement.scrollIntoView({ behavior: "smooth", block: "center" });
-          firstInvalidElement.focus();
+      const firstErrorField = Object.keys(errors)[0];
+      if (firstErrorField) {
+        const element = document.querySelector(
+          `[name="${firstErrorField}"]`
+        );
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.focus();
         }
-      }, 50);
+      }
       return;
     }
     next();
@@ -161,7 +166,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
             <div className="p-2 mt-1 titulos">22 de septiembre de 2026</div>
           </div>
           <div className="col-md-12 col-lg-6">
-            <label className="form-label"><strong>Plazo Límite del Proceso de Inscripción:</strong></label>
+          <label className="form-label"><strong>Plazo Límite del Proceso de Inscripción:</strong></label>
             <div className="p-2 mt-1 titulos">13 de octubre de 2026</div>
           </div>
         </div>
@@ -187,7 +192,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
               className="form-check-input"
               {...register("tipoInscripcion", { required: "Debe seleccionar una opción" })}
             />
-            <label className="form-check-label" htmlFor="radioIndividual">Inscripción individual</label>
+            <label className="form-check-label">Inscripción individual</label>
           </div>
         </div>
         <div className="col-md-12 col-lg-6">
@@ -199,7 +204,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
               className="form-check-input"
               {...register("tipoInscripcion", { required: "Debe seleccionar una opción" })}
             />
-            <label className="form-check-label" htmlFor="radioGrupal">Estructura plural</label>
+            <label className="form-check-label">Estructura plural</label>
           </div>
           {errors.tipoInscripcion && (
             <p className="text-danger small">{errors.tipoInscripcion.message}</p>
@@ -364,9 +369,11 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                   pattern: { value: telefonoPattern, message: 'Formato teléfono inválido sin espacios, sólo números. (ej: celular inicia con 3 o fijo inicia por 6 o 0)' },
                 })}
               />
-              <div className="invalid-feedback">{errors.telefono?.message}</div>
+              <div className="invalid-feedback">{errors.telefono?.message}
+              </div>
             </div>
           </div>
+
         </div>
       )}
 
@@ -391,6 +398,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                 </div>
 
                 <div className="row gx-3 gy-2">
+
                   <div className="col-md-12">
                     <label className="form-label">Correo Electrónico (para notificaciones oficiales) *</label>
                     <div className="input-group">
@@ -416,7 +424,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                         required: 'Nombre o razón social obligatorio',
                         minLength: { value: 3, message: 'Mínimo 3 caracteres' },
                         pattern: {
-                          value: /^(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.,\s&#%+/()'"-]{3,150}$/,
+                          value: /^(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.,\-\s&#%+/()'"]{3,150}$/,
                           message: 'Sólo se permiten letras, números, espacios, puntos guiones y &',
                         },
                         validate: (v) =>
@@ -543,7 +551,8 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                           pattern: { value: telefonoPattern, message: 'Formato teléfono inválido sin espacios, sólo números. (ej: celular inicia con 3 o fijo inicia por 6 o 0)' },
                         })}
                       />
-                      <div className="invalid-feedback">{errors.integrantes?.[index]?.telefono?.message}</div>
+                      <div className="invalid-feedback">{errors.integrantes?.[index]?.telefono?.message}
+                      </div>
                     </div>
                   </div>
 
@@ -554,6 +563,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                       type="checkbox"
                       {...register(`integrantes.${index}.autorizacionOrgano`, {
                         required: 'Debe aceptar los términos y condiciones'
+
                       })}
                     />
                     <label className="form-check-label ms-2" htmlFor={`autorizacionOrgano-${index}`}>
@@ -585,6 +595,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                     />
                     <div className="invalid-feedback">{errors.integrantes?.[index]?.autorizacionOrganoDocumento?.message}</div>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -617,6 +628,8 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
           Siguiente <FaLongArrowAltRight />
         </button>
       </div>
+
+
     </>
   );
 }

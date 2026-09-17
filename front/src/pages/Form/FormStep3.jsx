@@ -1,7 +1,8 @@
 import Swal from "sweetalert2";
 import DatePicker from "react-datepicker";
 import { Controller } from "react-hook-form";
-import { FaTrash, FaPlus, FaLongArrowAltLeft, FaLongArrowAltRight } from 'react-icons/fa';
+import { FaTrash, FaPlus } from "react-icons/fa";
+import { FaLongArrowAltLeft, FaLongArrowAltRight, FaCaretDown } from 'react-icons/fa';
 
 export default function FormStep3({ register, control, errors, fields, append, remove, trigger, resetField, next, back }) {
 
@@ -64,15 +65,18 @@ export default function FormStep3({ register, control, errors, fields, append, r
   };
 
   const validateStep = async () => {
-    const valid = await trigger(["proyectos"]);
+    const valid = await trigger("proyectos", "situacionJuridicaDocumento");
     if (!valid) {
-      setTimeout(() => {
-        const firstInvalidElement = document.querySelector(".is-invalid");
-        if (firstInvalidElement) {
-          firstInvalidElement.scrollIntoView({ behavior: "smooth", block: "center" });
-          firstInvalidElement.focus();
+      const firstErrorField = Object.keys(errors)[0];
+      if (firstErrorField) {
+        const element = document.querySelector(
+          `[name="${firstErrorField}"]`
+        );
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.focus();
         }
-      }, 50);
+      }
       return;
     }
     next();
@@ -94,6 +98,10 @@ export default function FormStep3({ register, control, errors, fields, append, r
           <div className="card-body">
 
             <h5 className="text-muted">A. Requisitos mínimos</h5>
+            <p className="text-muted small"> El proponente, que se presente de manera individual o como estructura plural, deberá incluir
+              como requisitos mínimos para cumplir con los requisitos de inscripción a la subasta, los
+              siguientes documentos o información:
+            </p>
 
             <div className="d-flex justify-content-between align-items-center mb-2">
               <strong>Proyecto #{index + 1}</strong>
@@ -113,6 +121,12 @@ export default function FormStep3({ register, control, errors, fields, append, r
                   {...register(`proyectos.${index}.nombre`, {
                     required: 'Nombre obligatorio',
                     minLength: { value: 5, message: 'Mínimo 5 caracteres' },
+                    validate: (v) => {
+                      if (/[<>]/.test(v)) return 'Contiene caracteres inválidos';
+                      if (!/^(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.,\-\s&#%+/()'"]{3,150}$/.test(v))
+                        return 'Sólo se permiten letras, números, espacios, puntos guiones y &';
+                      return true;
+                    }
                   })}
                 />
                 <div className="invalid-feedback">{errors.proyectos?.[index]?.nombre?.message}</div>
@@ -158,6 +172,9 @@ export default function FormStep3({ register, control, errors, fields, append, r
 
               <div className="col-md-12">
                 <label className="form-label">Identificación catastral y registral *</label>
+                <p className="text-muted small">
+                  Chip catastral y matrícula inmobiliaria del predio donde se desarrollará el proyecto.
+                </p>
                 <input
                   type="text"
                   className={`form-control ${errors.proyectos?.[index]?.idCatastral ? 'is-invalid' : ''}`}
@@ -186,88 +203,119 @@ export default function FormStep3({ register, control, errors, fields, append, r
                 </select>
                 <div className="invalid-feedback">{errors.proyectos?.[index]?.situacionJuridica?.message}</div>
               </div>
+              <p className="text-muted small">
+                Adjuntar soporte documental que respalde el estado actual del predio señalado.
+              </p>
+              <input
+                className={`form-control ${errors.proyectos?.[index]?.situacionJuridicaDocumento ? 'is-invalid' : ''}`}
+                type="file"
+                id={`proyectos.${index}.situacionJuridicaDocumento`}
+                accept=".pdf,.xls,.xlsx"
+                {...register(`proyectos.${index}.situacionJuridicaDocumento`, {
+                  required: "Este documento es obligatorio",
+                  validate: {
+                    checkFileType: validateFileType,
+                    checkFileSize: validateFileSize,
+                  },
+                })}
+              />
+              <div className="invalid-feedback">{errors.proyectos?.[index]?.situacionJuridicaDocumento?.message}</div>
 
-              <div className="col-md-12">
-                <p className="text-muted small">Adjuntar soporte documental que respalde el estado actual del predio señalado.</p>
-                <input
-                  className={`form-control ${errors.proyectos?.[index]?.situacionJuridicaDocumento ? 'is-invalid' : ''}`}
-                  type="file"
-                  id={`proyectos.${index}.situacionJuridicaDocumento`}
-                  accept=".pdf,.xls,.xlsx"
-                  {...register(`proyectos.${index}.situacionJuridicaDocumento`, {
-                    required: "Este documento es obligatorio",
-                    validate: {
-                      checkFileType: validateFileType,
-                      checkFileSize: validateFileSize,
-                    },
-                  })}
-                />
-                <div className="invalid-feedback">{errors.proyectos?.[index]?.situacionJuridicaDocumento?.message}</div>
-              </div>
 
               <div className="col-md-12 col-lg-6">
-                <label className="form-label me-2">Fecha aproximada de licencia</label>
-                <Controller
-                  control={control}
-                  name={`proyectos.${index}.fechaLicencia`}
-                  rules={{ required: 'La fecha de licencia es obligatoria' }}
-                  render={({ field }) => (
-                    <DatePicker
-                      className={`form-control ${errors.proyectos?.[index]?.fechaLicencia ? 'is-invalid' : ''}`}
-                      placeholderText="dd/MM/yyyy"
-                      selected={field.value ? new Date(field.value) : null}
-                      onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
-                      dateFormat="dd/MM/yyyy"
-                    />
-                  )}
-                />
-                <div className="invalid-feedback">{errors.proyectos?.[index]?.fechaLicencia?.message}</div>
-              </div>
+                  <label className="form-label me-2">Fecha aproximada de licencia</label>
+                  <p className="text-muted small"> Fecha estimada en la que se obtendrá la licencia del proyecto.
+                  </p>
+                  <Controller
+                    control={control}
+                    name={`proyectos.${index}.fechaLicencia`}
+                    rules={{ required: 'La fecha de licencia es obligatoria' }}
+                    render={({ field }) => (
+                      <DatePicker
+                        className={`form-control ${errors.proyectos?.[index]?.fechaLicencia ? 'is-invalid' : ''}`}
+                        placeholderText="dd/MM/yyyy"
+                        selected={field.value ? new Date(field.value) : null}
+                        onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
+                        dateFormat="dd/MM/yyyy"
+                      />
+                    )}
+                  />
+                  <div className="invalid-feedback">{errors.fechaLicencia?.message}</div>
+                </div>
 
-              <div className="col-md-12">
-                <label className="form-label">Número de unidades de vivienda a desarrollar</label>
-                <input
-                  type="number"
-                  className={`form-control ${errors.proyectos?.[index]?.numUnidades ? 'is-invalid' : ''}`}
-                  {...register(`proyectos.${index}.numUnidades`, { 
-                      required: 'Número de unidades obligatorio',
+                <div className="col-md-12">
+                  <label className="form-label">Número de unidades de vivienda a desarrollar</label>
+                  <p className="text-muted small"> Cantidad total de unidades de vivienda que se incluirán en el desarrollo del proyecto, desagregadas por su tipología de vivienda.
+                  </p>
+                  <input
+                    type="number"
+                    className={`form-control ${errors.proyectos?.[index]?.numUnidades ? 'is-invalid' : ''}`}
+                    {...register(`proyectos.${index}.numUnidades`, { 
+                        required: 'Número de unidades obligatorio',
+                        valueAsNumber: true, 
+                        min: { value: 1, message: 'Debe ser mayor que cero' } })}
+                  />
+                  <div className="invalid-feedback">{errors.proyectos?.[index]?.numUnidades?.message}</div>
+                </div>
+
+                <div className="col-md-12">
+                  <label className="form-label">Edificabilidad</label>
+                  <p className="text-muted small"> Índice de edificabilidad previsto para el desarrollo
+                    del proyecto.
+                  </p>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className={`form-control ${errors.proyectos?.[index]?.indiceEdificabilidad ? 'is-invalid' : ''}`}
+                    {...register(`proyectos.${index}.indiceEdificabilidad`, { 
+                      required: 'Índice de edificabilidad obligatorio',
                       valueAsNumber: true, 
-                      min: { value: 1, message: 'Debe ser mayor que cero' } })}
-                />
-                <div className="invalid-feedback">{errors.proyectos?.[index]?.numUnidades?.message}</div>
-              </div>
+                      min: { value: 0, message: 'Debe ser mayor o igual a cero' } })}
+                  />
+                  <div className="invalid-feedback">{errors.proyectos?.[index]?.indiceEdificabilidad?.message}</div>
+                </div>
 
-              <div className="col-md-12">
-                <label className="form-label">Edificabilidad</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className={`form-control ${errors.proyectos?.[index]?.indiceEdificabilidad ? 'is-invalid' : ''}`}
-                  {...register(`proyectos.${index}.indiceEdificabilidad`, { 
-                    required: 'Índice de edificabilidad obligatorio',
-                    valueAsNumber: true, 
-                    min: { value: 0, message: 'Debe ser mayor o igual a cero' } })}
-                />
-                <div className="invalid-feedback">{errors.proyectos?.[index]?.indiceEdificabilidad?.message}</div>
-              </div>
-
-              <div className="col-md-12">
-                <label className="form-label">Área construida en el uso</label>
-                <textarea
-                  className={`form-control ${errors.proyectos?.[index]?.desgloseArea ? 'is-invalid' : ''}`}
-                  placeholder={`Ej:\nResidencial: 1.250 m²\nComercial: 430 m²`}
-                  rows={4}
-                  {...register(`proyectos.${index}.desgloseArea`, {
-                    required: 'El desglose de área es obligatorio',
-                  })}
-                />
-                <div className="invalid-feedback">{errors.proyectos?.[index]?.desgloseArea?.message}</div>
-              </div>
+                <div className="col-md-12">
+                  <label className="form-label">Área construida en el uso</label>
+                  <p className="text-muted small"> Desglose del área construida (m²) según el uso en el proyecto (residencial, comercial, parqueadero, servicios, entre otros).
+                     Área construida en el uso: Corresponde al área construida para un uso en particular, 
+                    descontando muros de fachada, muros perimetrales, ductos, estructura, equipamiento comunal privado, circulaciones 
+                    comunes y cuartos de acopio. Esta área se usa para efectos del cálculo de equipamiento comunal privado 
+                    (Ver 1.3., 1.3.2., A. Exigencia de equipamiento comunal privado), cuartos de acopio (Ver artículo 190, numeral 7 
+                    del Decreto Distrital 555 de 2021) y área mínima habitable de la unidad de vivienda (Ver artículo 384 del Decreto
+                     Distrital 555 de 2021). (Ver ilustración 01 del Anexo 5 del Decreto Distrital 555 de 2021). Esta definición
+                      corresponde a la dispuesta en la página 7 del numeral 1.1. del Capítulo 1 “Normas Urbanísticas Comunes” del 
+                      Anexo No. 5 del Decreto Distrital 
+                  </p>
+                  <textarea
+                    className={`form-control ${errors.proyectos?.[index]?.desgloseArea ? 'is-invalid' : ''}`}
+                    placeholder={`Ej:
+                      Residencial: 1.250 m²
+                      Comercial: 430 m²`}
+                    rows={4}
+                    {...register(`proyectos.${index}.desgloseArea`, {
+                      required: 'El desglose de área es obligatorio',
+                      pattern: {
+                        value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9:\s\n]+$/,
+                        message: 'Formato esperado: Uso: 1.250 m²',
+                      },
+                    })}
+                  />
+                  <div className="invalid-feedback">{errors.proyectos?.[index]?.desgloseArea?.message}</div>
+                </div>
 
             </div>
             <br />
+            <p className="text-muted small">
+              <strong>Nota 1: </strong>La información contenida en los requisitos mínimos es de carácter indicativo. En
+              consecuencia, durante el desarrollo de la subasta, la oferta de compra de certificados que
+              presenten los proponentes podrá diferir del número de certificados a adquirir registrado en esta
+              sección.
+            </p>
             <hr />
+            <br />
+
           </div>
         </div>
       ))}
@@ -279,7 +327,7 @@ export default function FormStep3({ register, control, errors, fields, append, r
 
       <div className="d-flex justify-content-between mt-5">
         <button type="button" className="btn buttonsBack" onClick={() => {
-          resetField("proyectos");
+          resetField("situacionJuridicaDocumento");
           back();
         }}>
           <FaLongArrowAltLeft /> Atrás
