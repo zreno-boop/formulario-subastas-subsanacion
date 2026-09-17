@@ -243,7 +243,7 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
                 minLength: { value: 3, message: 'Mínimo 3 caracteres' },
                 pattern: {
                   value: /^(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.,\-\s&#%+/()'"]{3,150}$/,
-                  message: 'Sólo se permiten letras, números, espacios, puntos guiones y &',
+                  message: 'El nombre o razón social debe contener al menos una letra. Se permiten letras, números, espacios, puntos guiones y &.',
                 },
                 validate: (v) =>
                   /[<>]/.test(v) ? 'Contiene caracteres inválidos' : true,
