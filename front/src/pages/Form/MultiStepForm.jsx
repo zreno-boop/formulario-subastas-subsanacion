@@ -7,6 +7,7 @@ import FormStep3 from './FormStep3';
 import FormStep4 from './FormStep4';
 import ProgressBar from './ProgressBar';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
+import PreventNumberInputScroll from './PreventNumberInputScroll';
 import LogoRenobo from '../../assets/logoRenobo.png';
 import './MultiStepForm.css';
 
@@ -249,6 +250,7 @@ export default function MultiStepForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        <PreventNumberInputScroll />
         <div className="container-fluid py-4">
           <AnimatePresence mode="wait">
             <Motion.div
