@@ -198,103 +198,69 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
       }
     }
 
-// 4. ENVÍO B) CORREO INTERNO A LOS REVISORES EN MÚLTIPLES PARTES SI ES NECESARIO
+    // 4. ENVÍO B) CORREO INTERNO A LOS REVISORES (CON DATOS Y ADJUNTOS)
     const revisoresRaw = process.env.ADMIN_EMAILS || '';
     const revisoresList = revisoresRaw.split(',').map(e => e.trim()).filter(Boolean);
 
     if (revisoresList.length > 0) {
-      const MAX_BATCH_BYTES = 20 * 1024 * 1024; // Límite seguro de 20 MB por correo
+      let mailAttachments = [{ filename: 'datos_formulario.csv', path: csvFilePath }];
+      let totalSizeBytes = fs.statSync(csvFilePath).size;
 
-      // Lista completa de archivos disponibles a adjuntar
-      const allFiles = [];
-      
-      // Siempre incluir el CSV generado primero
-      if (fs.existsSync(csvFilePath)) {
-        allFiles.push({
-          filename: 'datos_formulario.csv',
-          path: csvFilePath,
-          size: fs.statSync(csvFilePath).size
-        });
-      }
-
-      // Añadir los adjuntos cargados por el usuario
       if (req.files && req.files.length > 0) {
-        req.files.forEach(file => {
-          allFiles.push({
+        for (const file of req.files) {
+          totalSizeBytes += file.size;
+          mailAttachments.push({
             filename: file.originalname,
-            path: file.path,
-            size: file.size
+            path: file.path
           });
-        });
-      }
-
-      // Agrupar adjuntos en lotes que no superen los 20MB
-      const batches = [];
-      let currentBatch = [];
-      let currentBatchSize = 0;
-
-      for (const file of allFiles) {
-        // Si incluir este archivo supera el límite, cerramos el lote actual y creamos uno nuevo
-        if (currentBatchSize + file.size > MAX_BATCH_BYTES && currentBatch.length > 0) {
-          batches.push(currentBatch);
-          currentBatch = [];
-          currentBatchSize = 0;
-        }
-
-        currentBatch.push({ filename: file.filename, path: file.path });
-        currentBatchSize += file.size;
-      }
-
-      if (currentBatch.length > 0) {
-        batches.push(currentBatch);
-      }
-
-      const totalParts = batches.length;
-
-      // Enviar cada lote como un correo independiente (Parte X de Y)
-      for (let index = 0; index < totalParts; index++) {
-        const partNumber = index + 1;
-        const batchAttachments = batches[index];
-
-        const revisoresMailOptions = {
-          from: `"Sistema Subastas RENOBO" <${process.env.GMAIL_USER}>`,
-          to: revisoresList.join(','),
-          subject: `[NUEVO REGISTRO - PARTE ${partNumber}/${totalParts}] Radicado ${submissionId} - ${req.body.razonSocial || 'Nuevo Postulante'}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-              <h2>Nuevo Formulario Recibido para Revisión</h2>
-              <p><strong>Atención:</strong> Debido al peso de los adjuntos, esta información se envía en <strong>${totalParts} parte(s)</strong>. Esta es la <strong>Parte ${partNumber} de ${totalParts}</strong>.</p>
-              
-              <div style="background-color: #f4f4f4; padding: 12px; border-radius: 5px; margin: 15px 0;">
-                <ul>
-                  <li><strong>Radicado:</strong> ${submissionId}</li>
-                  <li><strong>Fecha:</strong> ${fechaRecepcion}</li>
-                  <li><strong>Razón Social / Nombre:</strong> ${req.body.razonSocial || 'N/A'}</li>
-                  <li><strong>NIT:</strong> ${req.body.nit || 'N/A'}</li>
-                  <li><strong>Email de contacto:</strong> ${req.body.email || 'N/A'}</li>
-                </ul>
-              </div>
-
-              <p>Adjuntos incluidos en este correo (Parte ${partNumber}/${totalParts}):</p>
-              <ul>
-                ${batchAttachments.map(att => `<li>${att.filename}</li>`).join('')}
-              </ul>
-            </div>
-          `,
-          attachments: batchAttachments
-        };
-
-        try {
-          await transporter.sendMail(revisoresMailOptions);
-          console.log(`Correo enviado a revisores (Parte ${partNumber}/${totalParts}) - Radicado: ${submissionId}`);
-        } catch (err) {
-          console.error(`Error enviando correo a revisores (Parte ${partNumber}/${totalParts}):`, err);
         }
       }
 
+      // Validar límite total de adjuntos para Gmail (~22 MB)
+      const MAX_GMAIL_BYTES = 22 * 1024 * 1024;
+      let limitExceeded = false;
+      if (totalSizeBytes > MAX_GMAIL_BYTES) {
+        limitExceeded = true;
+        mailAttachments = [{ filename: 'datos_formulario.csv', path: csvFilePath }];
+      }
+
+      const revisoresMailOptions = {
+        from: `"Sistema Subastas RENOBO" <${process.env.GMAIL_USER}>`,
+        to: revisoresList.join(','),
+        subject: `[NUEVO REGISTRO] Radicado ${submissionId} - ${req.body.razonSocial || 'Nuevo Postulante'}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <h2>Nuevo Formulario Recibido para Revisión</h2>
+            <p>Se ha registrado un nuevo formulario en la plataforma:</p>
+            
+            <ul>
+              <li><strong>Radicado:</strong> ${submissionId}</li>
+              <li><strong>Fecha:</strong> ${fechaRecepcion}</li>
+              <li><strong>Razón Social / Nombre:</strong> ${req.body.razonSocial || 'N/A'}</li>
+              <li><strong>NIT:</strong> ${req.body.nit || 'N/A'}</li>
+              <li><strong>Email de contacto:</strong> ${req.body.email || 'N/A'}</li>
+              <li><strong>Tipo de Inscripción:</strong> ${req.body.tipoInscripcion || 'N/A'}</li>
+            </ul>
+
+            ${limitExceeded 
+              ? `<p style="color: #d9534f;"><strong>Atención:</strong> Los archivos subidos superan los 22MB. No se enviaron en este correo por límite de peso, pero se encuentran guardados en el servidor en la carpeta: <code>uploads/${submissionId}</code>.</p>`
+              : `<p>Se adjuntan a este correo el resumen en formato CSV y todos los documentos aportados por el solicitante.</p>`
+            }
+          </div>
+        `,
+        attachments: mailAttachments
+      };
+
+      try {
+        await transporter.sendMail(revisoresMailOptions);
+        console.log(`Notificación con datos enviada a revisores: ${revisoresList.join(', ')}`);
+      } catch (err) {
+        console.error('Error enviando correo a revisores:', err);
+      }
     } else {
       console.warn('No se han definido ADMIN_EMAILS en el archivo .env');
     }
+
     // 5. RESPUESTA AL FRONTEND
     res.status(200).json({
       message: 'Formulario procesado correctamente.',

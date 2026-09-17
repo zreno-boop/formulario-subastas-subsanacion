@@ -156,18 +156,18 @@ export default function FormStep1({ register, errors, watch, setValue, clearErro
           </div>
           <div className="col-md-12 col-lg-6">
             <label className="form-label"><strong>Fecha de Convocatoria:</strong></label>
-            <div className="p-2 mt-1 titulos">15 de septiembre de 2026</div>
+            <div className="p-2 mt-1 titulos">14 de septiembre de 2026</div>
           </div>
         </div>
 
         <div className="row mb-3">
           <div className="col-md-12 col-lg-6">
             <label className="form-label"><strong>Fecha de Inicio del Proceso de Inscripción:</strong></label>
-            <div className="p-2 mt-1 titulos">22 de septiembre de 2026</div>
+            <div className="p-2 mt-1 titulos">21 de septiembre de 2026</div>
           </div>
           <div className="col-md-12 col-lg-6">
           <label className="form-label"><strong>Plazo Límite del Proceso de Inscripción:</strong></label>
-            <div className="p-2 mt-1 titulos">13 de octubre de 2026</div>
+            <div className="p-2 mt-1 titulos">9 de octubre de 2026</div>
           </div>
         </div>
         <br />
