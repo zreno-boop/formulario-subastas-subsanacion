@@ -14,12 +14,12 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
   const fechaHoy = new Date();
   const maxFechaHoy = new Date(fechaHoy);
   maxFechaHoy.setDate(maxFechaHoy.getDate());
-  const fechaLimite = new Date(2026, 10, 9); // Mes 10 = octubre
+  const fechaLimite = new Date(2026, 9, 13); // Mes 9 = octubre (0-indexado)
   const maxFecha = new Date(fechaLimite);
   maxFecha.setDate(maxFecha.getDate() + 150);
 
   // 1. Fechas del Proceso de Subasta
-  const fechaLimiteInscripcion = new Date(2026, 9, 9); // Mes 0 = enero, 9 = octubre
+  const fechaLimiteInscripcion = new Date(2026, 9, 13); // Mes 9 = octubre
   fechaLimiteInscripcion.setHours(0, 0, 0, 0);
 
   const fechaExpedicionWatch = watch('fechaExpedicion');
@@ -310,7 +310,6 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
             <select className={`form-select ${errors.instrumentoTipo ? 'is-invalid' : ''}`} {...register('instrumentoTipo', { required: 'Seleccione el tipo de instrumento' })}>
               <option value="">-- Seleccione una opción --</option>
               <option value="cheque">Cheque de Gerencia</option>
-              <option value="garantia_bancaria">Garantía Bancaria Irrevocable</option>
               <option value="cdt">CDT Endosado</option>
             </select>
             <div className="invalid-feedback">{errors.instrumentoTipo?.message}</div>
@@ -335,7 +334,7 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
           </div>
 
           <div className="col-md-12">
-            <label className="form-label">Número del Instrumento (Garantía Bancaria Irrevocable / Cheque de Gerencia / CDT Endosado) *</label>
+            <label className="form-label">Número del Instrumento (Cheque de Gerencia / CDT Endosado) *</label>
             <input
               className={`form-control ${errors.instrumentoNumero ? 'is-invalid' : ''}`}
               {...register('instrumentoNumero', {
@@ -355,23 +354,6 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
               name="fechaExpedicion"
               rules={{
                 required: 'Fecha de expedición obligatoria',
-                /* validate: (v) => {
-                  if (!v) return 'Fecha obligatoria';
-
-                  const fecha = new Date(v);
-                  fecha.setHours(0, 0, 0, 0);
-
-                  const hoy = new Date();
-                  hoy.setHours(0, 0, 0, 0);
-
-                  if (fecha.getTime() === hoy.getTime())
-                    return 'La fecha de expedición no puede ser la fecha actual';
-
-                  if (fecha > hoy)
-                    return 'La fecha de expedición no puede ser futura';
-
-                  return true;
-                }, */
                 validate: (v) => {
                   if (!v) return 'Fecha obligatoria';
                   const expedicion = parseLocalDate(v);
@@ -388,12 +370,8 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
                   className={`form-control ${errors.fechaExpedicion ? 'is-invalid' : ''}`}
                   placeholderText="dd/MM/yyyy"
                   selected={parseLocalDate(field.value) || null}
-                  /* onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
-                  dateFormat="dd/MM/yyyy"
-                  maxDate={maxFechaHoy} */
                   onChange={(d) => {
                     field.onChange(formatToLocalDateString(d));
-                    // Dispara re-validación de vigencia al cambiar expedición
                     trigger('vigenciaInstrumento');
                   }}
                   dateFormat="dd/MM/yyyy"
@@ -414,24 +392,6 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
               name="vigenciaInstrumento"
               rules={{
                 required: 'Vigencia obligatoria',
-                /* validate: (v) => {
-                  if (!v) return 'Vigencia obligatoria';
-
-                  const vigencia = new Date(v);
-                  vigencia.setHours(0, 0, 0, 0);
-
-                  const fechaExpedicion = watch('fechaExpedicion');
-                  if (!fechaExpedicion) return true;
-
-                  const expedicion = new Date(fechaExpedicion);
-                  expedicion.setHours(0, 0, 0, 0);
-
-                  if (vigencia < expedicion) {
-                    return 'La vigencia no puede ser anterior a la fecha de expedición';
-                  }
-
-                  return true;
-                }, */
                 validate: (v) => {
                   if (!v) return 'Vigencia obligatoria';
 
@@ -454,7 +414,6 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
                 }
               }}
               render={({ field }) => {
-                // El piso del DatePicker ahora es exactamente la Fecha de Expedición seleccionada
                 const expedicion = fechaExpedicionWatch ? parseLocalDate(fechaExpedicionWatch) : null;
                 const minDateCalendar = expedicion || hoy;
 
@@ -463,11 +422,6 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
                     locale="es"
                     className={`form-control ${errors.vigenciaInstrumento ? 'is-invalid' : ''}`}
                     placeholderText="dd/MM/yyyy"
-                    /* selected={field.value ? new Date(field.value) : null}
-                    onChange={(d) => field.onChange(d ? d.toISOString().split("T")[0] : "")}
-                    dateFormat="dd/MM/yyyy"
-                    minDate={fechaLimite}
-                    maxDate={maxFecha} */
                     selected={parseLocalDate(field.value)}
                     onChange={(d) => field.onChange(formatToLocalDateString(d))}
                     dateFormat="dd/MM/yyyy"
