@@ -93,7 +93,7 @@ export default function FormStep2({ register, errors, control, watch, tipoInscri
 
         <div className="mb-3">
           <label htmlFor="certificadoExistencia" className="form-label"><strong>1. Certificado de Existencia y Representación Legal *</strong></label>
-          <p className="text-muted small">Expedido con una antelación no mayor a <strong> treinta (30) días calendario </strong> a la fecha de cierre de la inscripción,
+          <p className="text-muted small">Expedido con una antelación no mayor a <strong> quince (15) días calendario </strong> a la fecha de cierre de la inscripción,
             ya sea del proponente inscrito de manera individual o de cada integrante de la estructura plural.
           </p>
           <p className="text-muted small">Debe acreditarse que el representante legal del proponente inscrito de manera individual, o el representante legal
