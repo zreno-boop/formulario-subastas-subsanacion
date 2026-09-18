@@ -53,10 +53,12 @@ const createUploadDir = (req, res, next) => {
 };
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, req.uploadPath),
+  destination: (req, res, cb) => cb(null, req.uploadPath),
   filename: (req, file, cb) => {
     const safeOriginalName = path.basename(file.originalname);
-    cb(null, Date.now() + '-' + safeOriginalName);
+    // Usamos crypto.randomUUID() para garantiazar un nombre único por archivo
+    const uniqueSuffix = crypto.randomUUID();
+    cb(null, `${uniqueSuffix}-${safeOriginalName}`);
   }
 });
 
@@ -218,15 +220,17 @@ app.post('/api/upload', createUploadDir, upload.any(), async (req, res) => {
       }
 
       // Añadir los adjuntos cargados por el usuario
-      if (req.files && req.files.length > 0) {
-        req.files.forEach(file => {
-          allFiles.push({
-            filename: file.originalname,
-            path: file.path,
-            size: file.size
-          });
-        });
-      }
+     // Añadir los adjuntos cargados por el usuario
+if (req.files && req.files.length > 0) {
+  req.files.forEach(file => {
+    allFiles.push({
+      // Muestra el nombre del campo para evitar confusión entre archivos con igual nombre original
+      filename: `[${file.fieldname}] ${file.originalname}`,
+      path: file.path,
+      size: file.size
+    });
+  });
+}
 
       // Agrupar adjuntos en lotes que no superen los 20MB
       const batches = [];
