@@ -181,8 +181,8 @@ export default function FormStep3({ register, control, errors, fields, append, r
                   {...register(`proyectos.${index}.idCatastral`, {
                     required: 'Identificación obligatoria',
                     pattern: {
-                      value: /^[A-Za-z0-9./-]{5,30}$/,
-                      message: 'Solo letras, números, guion, punto o barra (5-30 caracteres)',
+                      value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9./\-\s:]{5,100}$/,
+                      message: 'Solo se permiten letras, números, espacios, guiones, puntos, barras y dos puntos (5-100 caracteres)',
                     },
                   })}
                 />
@@ -291,14 +291,14 @@ export default function FormStep3({ register, control, errors, fields, append, r
                   <textarea
                     className={`form-control ${errors.proyectos?.[index]?.desgloseArea ? 'is-invalid' : ''}`}
                     placeholder={`Ej:
-                      Residencial: 1.250 m²
-                      Comercial: 430 m²`}
+                      Residencial: 1.250 m2
+                      Comercial: 430 m2`}
                     rows={4}
                     {...register(`proyectos.${index}.desgloseArea`, {
                       required: 'El desglose de área es obligatorio',
                       pattern: {
-                        value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9:\s\n]+$/,
-                        message: 'Formato esperado: Uso: 1.250 m²',
+                        value: /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.:\s\n]+$/,
+                        message: 'Formato esperado: Uso: 1.250 m2',
                       },
                     })}
                   />
