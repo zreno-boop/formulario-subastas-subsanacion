@@ -190,8 +190,14 @@ export default function MultiStepForm() {
         formData.append("autorizacionTratamientoDatos", data.autorizacionTratamientoDatos[0]);
       if (data.componentePlural?.[0])
         formData.append("componentePlural", data.componentePlural[0]);
-      if (data.formFileSign?.[0])
-        formData.append("formFileSign", data.formFileSign[0]);
+      /* if (data.formFileSign?.[0])
+        formData.append("formFileSign", data.formFileSign[0]); */
+      // Append multiple files using the same field name
+      if (data.formFileSign?.length > 0) {
+        Array.from(data.formFileSign).forEach((file) => {
+          formData.append("formFileSign", file);
+        });
+      }
 
 
       const response = await fetch('https://maps.renobo.com.co/backf/api/upload', {

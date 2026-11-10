@@ -75,14 +75,53 @@ export default function FormStep4({ register, watch, setValue, errors, back, onS
             className={`form-control ${errors.formFileSign ? 'is-invalid' : ''}`}
             type="file"
             id="formFileSign"
-            accept="image/png, image/jpeg, image/jpg"
+            /* accept="image/png, image/jpeg, image/jpg" */
+            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+            multiple
             {...register("formFileSign", {
               required: "La firma es obligatoria",
               validate: {
+              checkFileType: (files) => {
+                const allowedTypes = [
+                  "application/pdf",
+                  "image/png",
+                  "image/jpeg"
+                ];
+
+                if (!files || files.length === 0) {
+                  return "Debe adjuntar al menos un archivo";
+                }
+
+                const invalidFile = Array.from(files).find(
+                  file => !allowedTypes.includes(file.type)
+                );
+
+                if (invalidFile) {
+                  return `Formato no permitido: ${invalidFile.name}. Solo PDF, PNG o JPG`;
+                }
+
+                return true;
+              },
+
+              checkFileSize: (files) => {
+                const maxSize = 5 * 1024 * 1024;
+
+                const oversizedFile = Array.from(files || []).find(
+                  file => file.size > maxSize
+                );
+
+                if (oversizedFile) {
+                  return `El archivo ${oversizedFile.name} supera los 5MB`;
+                }
+
+                return true;
+              }
+            }
+              /* validate: {
                 checkFileType: (value) => {
                   const file = value?.[0];
                   if (!file) return "Debe adjuntar un archivo";
-                  const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+                  const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"       ];
                   if (!allowedTypes.includes(file.type)) return "Formato no permitido. Solo imágenes (PNG o JPG)";
                   return true;
                 },
@@ -93,10 +132,14 @@ export default function FormStep4({ register, watch, setValue, errors, back, onS
                   if (file.size > maxSize) return "El archivo no debe superar los 5MB";
                   return true;
                 },
-              },
+              }, */
             })}
           />
           <div className="invalid-feedback">{errors.formFileSign?.message}</div>
+          <small className="text-muted">
+            Puede adjuntar varios documentos PDF e imágenes PNG o JPG.
+            Tamaño máximo: 5MB por archivo.
+          </small>
         </div>
 
         <div className="col-md-12">
